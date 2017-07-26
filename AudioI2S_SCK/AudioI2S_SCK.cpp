@@ -181,83 +181,62 @@ int AudioI2S_SCK::Configure(int bitsPerSample,int channels, int bufferSize, int 
 }
 
 int AudioI2S_SCK::AudioSpectrumRead(int spectrum[], int Aspectrum [],int spectrumDB[], int AspectrumDB[], int fftSize){
+  
   if (!_SpectrumAvailable) {
     return 0;
   }
-  SerialPrint("Before GetBuffer time\t" + String(millis()),7,true);
 
+  // Get buffer (currently hardcoded)
   GetBuffer();
+
+  // Downscale the sample buffer for proper functioning
   DownScaling(_sampleBuffer, _bufferSize, CONST_FACTOR);
 
-  SerialPrint("After GetBuffer time\t" + String(millis()),7,true);
-
+  // Apply Hann Window
   Window();
+  
+  // FFT - EQUALIZATION and A-WEIGHTING
   FFT();
   EQUALIZING();
-  SerialPrint("After FFT time\t" + String(millis()),7,true);
   A_WEIGHTING();
 
-  SerialPrint("After A-w time\t" + String(millis()),7,true);
+  // RMS CALCULATION
   RMS();
 
+  // UPSCALING THE BUFFERS
   UpScaling(_sampleBuffer,_bufferSize,CONST_FACTOR);
   UpScaling(_sampleBufferWin,_bufferSize,CONST_FACTOR);
   UpScaling(_spectrumBuffer,fftSize/2,CONST_FACTOR);
   UpScaling(_AspectrumBuffer,fftSize/2,CONST_FACTOR);
 
-  SerialPrint("After RMS time\t" + String(millis()),7,true);
-
+  // CONVERT 2 DB THE BUFFERS
   Convert2DB(_spectrumBuffer, _spectrumBufferDB, _fftSize/2);
   Convert2DB(_AspectrumBuffer, _AspectrumBufferDB, _fftSize/2);
 
-  //Copy buffers
+  // COPY SPECTRUMS TO MAIN
   memcpy(spectrum, _spectrumBuffer, sizeof(int) * _fftSize/2);
   memcpy(Aspectrum, _AspectrumBuffer, sizeof(int) * _fftSize/2);
   memcpy(spectrumDB, _spectrumBufferDB, sizeof(int) * _fftSize/2);
   memcpy(AspectrumDB, _AspectrumBufferDB, sizeof(int) * _fftSize/2);
   
-  //Set available to 0 to wait for new process
+  // Set available to 0 to wait for new process
   _SpectrumAvailable = 0;
 
   return 1;
 }
 
-int AudioI2S_SCK::AudioRMSRead(int rms_time, int rms_specB,int rms_AspecB, int rms_timeDB, int rms_specBDB, int rms_AspecBDB){
-  //Set available to 0 to wait for new process
-  // 
+double AudioI2S_SCK::AudioRMSRead_dB(){
+    return _rms_specBDB;
+}
 
-  SerialPrint("Full Scale DBFS\t" + String(FULL_SCALE_DBFS),7,true);
-
-  if (!_RMSAvailable) {
-    return 0;
-  }
-
-  //rms_time = _rms_time;
-  //SerialPrint(String(rms_time) + "\t",7,false);
-
-  rms_specB = _rms_specB;
-  SerialPrint(String(rms_specB) + "\t",7,false);
-
-  rms_AspecB = _rms_AspecB;
-  SerialPrint(String(rms_AspecB) + "\t",7,true);
-
-  //rms_timeDB = _rms_timeDB;
-  //SerialPrint(String(rms_timeDB) + "\t",7,false);
-
-  rms_specBDB = _rms_specBDB;
-  SerialPrint(String(rms_specBDB) + "\t",7,false); 
-
-  rms_AspecBDB = _rms_AspecBDB;
-  SerialPrint(String(rms_AspecBDB) + "\t",7,true);
-
-  _RMSAvailable = 0;
-
-  return 1;
+double AudioI2S_SCK::AudioRMSRead_dBA(){
+    return _rms_AspecBDB;
 }
 
 void AudioI2S_SCK::GetBuffer(){
 
   //Get the hardcoded buffer
+  //buffer is already treated (usable samples, averaged)
   q31_t* dstG = (q31_t*)_sampleBuffer;
   for (int i = 0; i < _bufferSize; i ++) {
     int value = buffer[i];
@@ -296,7 +275,6 @@ void AudioI2S_SCK::FFT(){
   arm_rfft_q31(&_S31, (q31_t*)_sampleBufferWin, (q31_t*)_fftBuffer);
 
   //Calculate spectrumBuffer and normalize
-  SerialPrint("Begin time for module calculation\t"+String(millis()),7,true);
   
   const q31_t* _pfftBuffer = (const q31_t*)_fftBuffer;
   q31_t* _pspectrumBuffer = (q31_t*) _spectrumBuffer;
@@ -305,12 +283,8 @@ void AudioI2S_SCK::FFT(){
 
     SerialPrint(String(i) + "\t",6,false);
     
-    //SerialPrint(String(*_pfftBuffer) + "\t",7,false);
-    
     *_pspectrumBuffer = (*_pfftBuffer) * (*_pfftBuffer);
     _pfftBuffer++;
-    
-    //SerialPrint(String(*_pfftBuffer) + "\t",7,false);
     
     *_pspectrumBuffer += (*_pfftBuffer) * (*_pfftBuffer);
     *_pspectrumBuffer = sqrt(*_pspectrumBuffer);
@@ -320,33 +294,10 @@ void AudioI2S_SCK::FFT(){
       *_pspectrumBuffer = 2 * (*_pspectrumBuffer);
     }
 
-    //*_pspectrumBuffer = CONST_FACTOR * (*_pspectrumBuffer);
-    
-    SerialPrint(String(*_pspectrumBuffer),6,true);
     _pfftBuffer++;
     _pspectrumBuffer++;
   }
   SerialPrint("Finish time for module calculation\t"+String(millis()),6,true);
-    
-  /*
-    //Calculate spectrumBuffer (r,r,r,...)
-    //arm_cmplx_mag_q31((q31_t*)_fftBuffer, (q31_t*) _spectrumBuffer, _fftSize);
-
-  
-    SerialPrint("_spectrumBuffer print",7,true);
-    //Normalize spectrumBuffer
-    q31_t* spBF = (q31_t*)_spectrumBuffer;
-    for (int i = 0; i < _fftSize/2; i ++) {
-    SerialPrint(String(i) + "\t" + String(*spBF),7,false);
-    //Multiply by 2 every component except the DC (1st)
-    if (i) {
-      *spBF = 2*(*spBF);
-    }
-    SerialPrint( "\t" + String(*spBF),7,true);
-    spBF++;
-
-    }
-  */  
 }
 
 void AudioI2S_SCK::EQUALIZING(){
@@ -358,19 +309,18 @@ void AudioI2S_SCK::EQUALIZING(){
     //Multiply by 2 every component except the DC (1st)
     double equalfactor = EQUALTAB[i];
     *spBE /= equalfactor;
-
     spBE++;
   }
 }
 
 void AudioI2S_SCK::A_WEIGHTING(){
-  //Normalize spectrumBuffer
+  //Apply a-weighting to spectrumBuffer
   const q31_t* spBA = (const q31_t*)_spectrumBuffer;
   q31_t* AspBA = (q31_t*)_AspectrumBuffer;
 
   for (int i = 0; i < _fftSize/2; i ++) {
     
-    //Multiply by 2 every component except the DC (1st)
+    //Apply a-weighting
     double weighingfactor = WEIGHTINGTAB[i];
     *AspBA = weighingfactor * (*spBA);
 
@@ -380,6 +330,7 @@ void AudioI2S_SCK::A_WEIGHTING(){
 }
 
 void AudioI2S_SCK::UpScaling(void *vector, int vectorSize, int factor){
+  // UPSCALE signal by factor
     q31_t* _vectUP = (q31_t*) vector;
 
     for (int i = 0; i<vectorSize;i++){
@@ -389,6 +340,7 @@ void AudioI2S_SCK::UpScaling(void *vector, int vectorSize, int factor){
 }
 
 void AudioI2S_SCK::DownScaling(void *vector, int vectorSize, int factor){
+    // DOWNSCALE signal by factor
     q31_t* _vectDW = (q31_t*) vector;
 
     for (int i = 0; i<vectorSize;i++){
@@ -398,7 +350,7 @@ void AudioI2S_SCK::DownScaling(void *vector, int vectorSize, int factor){
 }
 
 void AudioI2S_SCK::RMS(){
-/*
+  /*
   //TIME DOMAIN
   //arm_rms_q31((q31_t*)_sampleBufferWin,_bufferSize,(q31_t*)&_rms_time);
   const q31_t* _prsampleBufferWin = (const q31_t*) _sampleBufferWin;
@@ -409,7 +361,7 @@ void AudioI2S_SCK::RMS(){
   }
   _rms_time = sqrt(_rms_time)/sqrt(_bufferSize);
   _rms_time = _rms_time * 1/RMS_HANN * CONST_FACTOR;
-*/
+  */
 
   //FREQ DOMAIN
   //arm_rms_q31((q31_t*)_spectrumBuffer,_fftSize/2, (q31_t*)&_rms_specB);

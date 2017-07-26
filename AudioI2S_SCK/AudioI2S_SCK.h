@@ -14,7 +14,9 @@ public:
 
   int Configure(int bitsPerSample,int channels, int bufferSize, int sampleRate);
   int AudioSpectrumRead(int spectrum[], int Aspectrum [], int spectrumDB[], int AspectrumDB[], int fftSize);
-  int AudioRMSRead(int rms_time, int rms_specB,int rms_AspecB, int rms_timeDB, int rms_specBDB, int rms_AspecBDB);
+  //double AudioRMSRead(double rms_specB, double rms_AspecB, double rms_specBDB, double rms_AspecBDB);
+  double AudioRMSRead_dB();
+  double AudioRMSRead_dBA();
   void SerialPrint(String ToPrint, int PrioFac, bool NewLine);//
   int available();
 
