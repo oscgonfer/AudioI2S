@@ -22,7 +22,7 @@ AudioI2S_SCK::AudioI2S_SCK(uint32_t fftSize) :
   //BUFFER Sizes
   _fftSize(fftSize),
   _bufferSize(0), //Already usable buffersize
-  //BUFFER
+  //BUFFERs
   _sampleBuffer(NULL),
   _sampleBufferWin(NULL),
   _fftBuffer(NULL),
@@ -32,10 +32,8 @@ AudioI2S_SCK::AudioI2S_SCK(uint32_t fftSize) :
   _spectrumBufferDB(NULL),
   _AspectrumBufferDB(NULL),
   //RMS
-  //_rms_time(0),
   _rms_specB(0),
   _rms_AspecB(0),
-  //_rms_timeDB(0),
   _rms_specBDB(0),
   _rms_AspecBDB(0),
   //EXTRAS
@@ -249,6 +247,7 @@ void AudioI2S_SCK::Window(){
   const q31_t* srcW = (const q31_t*)_sampleBuffer;
   q31_t* dstW = (q31_t*)_sampleBufferWin;
 
+  //Apply hann window in time-domain
   for (int i = 0; i < _bufferSize; i ++) {
     double window = HANN[i];
 
@@ -301,12 +300,12 @@ void AudioI2S_SCK::FFT(){
 }
 
 void AudioI2S_SCK::EQUALIZING(){
-  //Normalize spectrumBuffer
+  //Get spectrumBuffer
   q31_t* spBE = (q31_t*)_spectrumBuffer;
 
   for (int i = 0; i < _fftSize/2; i ++) {
     
-    //Multiply by 2 every component except the DC (1st)
+    //Deconvolution of the spectrumBuffer by division of the microphone frequency response
     double equalfactor = EQUALTAB[i];
     *spBE /= equalfactor;
     spBE++;
@@ -408,9 +407,8 @@ void AudioI2S_SCK::Convert2DB(void *vectorSource, void *vectorDest, int vectorSi
     //_SpectrumAvailable = 1;
 }
 
-//ONLY FOR PRINTING 
-void AudioI2S_SCK::SerialPrint(String ToPrint, int PrioFac, bool NewLine)
-{
+void AudioI2S_SCK::SerialPrint(String ToPrint, int PrioFac, bool NewLine){
+  // ONLY FOR PRINTING
   if (PrioFac-PRIORITY>0) {
       if (!NewLine) {
         Serial.print(ToPrint);
