@@ -13,19 +13,19 @@ public:
   virtual ~AudioI2S_SCK(); //
 
   int Configure(int bitsPerSample,int channels, int bufferSize, int sampleRate);
-  int AudioSpectrumRead(int spectrum[], int Aspectrum [], int spectrumDB[], int AspectrumDB[], int fftSize);
-  //double AudioRMSRead(double rms_specB, double rms_AspecB, double rms_specBDB, double rms_AspecBDB);
+  double AudioSpectrumRead(int spectrum[], int Aspectrum [], int spectrumDB[], int AspectrumDB[], int fftSize);
+  double AudioTimeFilter();
   double AudioRMSRead_dB();
-  double AudioRMSRead_dBA();
   void SerialPrint(String ToPrint, int PrioFac, bool NewLine);//
   int available();
 
 protected:
   virtual void GetBuffer();
   virtual void Window();
+  virtual void FilterConv();
   virtual void FFT();
   virtual void A_WEIGHTING();
-  virtual void RMS();
+  virtual double RMSG(void *inputBuffer, int inputSize, int typeRMS);
   virtual void UpScaling(void *vector, int vectorSize, int factor);
   virtual void DownScaling(void *vector, int vectorSize, int factor);
   virtual void EQUALIZING();
@@ -46,6 +46,8 @@ private:
   double _rms_timeDB;
   double _rms_specBDB;
   double _rms_AspecBDB;
+  double _rmsFilterA;
+  double _rmsFilterADB;
   //BUFFERS
   void* _sampleBuffer;
   void* _sampleBufferWin;
@@ -55,12 +57,13 @@ private:
   void* _fftBufferDB;
   void* _spectrumBufferDB;
   void* _AspectrumBufferDB;
+  void* _filterBufferR;
+  void* _filterBufferI;
+  void* _sampleBufferFilt;
   //EXTRAS
-  String _ToPrint;
-  bool _NewLine;
-  int _PrioFac;
   int _SpectrumAvailable;
   int _RMSAvailable;
+  int _bufferAvailable;
   int _available;
 
   arm_rfft_instance_q15 _S15;

@@ -15,6 +15,7 @@ int AspectrumDB[fftSize/2];
 
 double rms_specBDB = 0;
 double rms_AspecBDB = 0;
+double rms_FilterADB = 0;
 
 ///// DEFINE OBJECT
 AudioI2S_SCK AudioI2S_SCK(fftSize);
@@ -51,12 +52,12 @@ uint32_t FreeRamMem() {
 void loop() {
 	if (AudioI2S_SCK.available()){
     //Serial.println("Audio I2S SCK available");
-		AudioI2S_SCK.AudioSpectrumRead(spectrum, Aspectrum, spectrumDB, AspectrumDB, fftSize);
+		rms_AspecBDB = AudioI2S_SCK.AudioSpectrumRead(spectrum, Aspectrum, spectrumDB, AspectrumDB, fftSize);
  		rms_specBDB = AudioI2S_SCK.AudioRMSRead_dB();
-    rms_AspecBDB = AudioI2S_SCK.AudioRMSRead_dBA();
-		
-    Serial.println("Buffer Results (arduino)");
+    //rms_FilterADB = AudioI2S_SCK.AudioTimeFilter();
 
+    Serial.println("Buffer Results (arduino)");
+    
 		for (int i = 0; i < fftSize/2; i++) {
       	Serial.print((i * sampleRate) / fftSize);
      		Serial.print("\t");
@@ -70,9 +71,10 @@ void loop() {
     	}
     
     Serial.println("*******");
-
+    
     Serial.println("rms_specBDB\t" + String(rms_specBDB));
     Serial.println("rms_AspecBDB\t" + String(rms_AspecBDB));
+    Serial.println("rms_FilterADB\t" + String(rms_FilterADB));
     
     Serial.println("*******");
     
