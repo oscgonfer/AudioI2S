@@ -14,7 +14,6 @@ public:
 
   int Configure(int bitsPerSample,int channels, int bufferSize, int sampleRate);
   double AudioSpectrumRead(int spectrum[], int Aspectrum [], int spectrumDB[], int AspectrumDB[], int fftSize);
-  double AudioTimeFilter();
   double AudioRMSRead_dB();
   void SerialPrint(String ToPrint, int PrioFac, bool NewLine);//
   int available();
@@ -22,7 +21,6 @@ public:
 protected:
   virtual void GetBuffer();
   virtual void Window();
-  virtual void FilterConv();
   virtual void FFT();
   virtual void A_WEIGHTING();
   virtual double RMSG(void *inputBuffer, int inputSize, int typeRMS);
@@ -46,8 +44,6 @@ private:
   double _rms_timeDB;
   double _rms_specBDB;
   double _rms_AspecBDB;
-  double _rmsFilterA;
-  double _rmsFilterADB;
   //BUFFERS
   void* _sampleBuffer;
   void* _sampleBufferWin;
@@ -57,9 +53,6 @@ private:
   void* _fftBufferDB;
   void* _spectrumBufferDB;
   void* _AspectrumBufferDB;
-  void* _filterBufferR;
-  void* _filterBufferI;
-  void* _sampleBufferFilt;
   //EXTRAS
   int _SpectrumAvailable;
   int _RMSAvailable;
