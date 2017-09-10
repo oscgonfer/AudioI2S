@@ -1,2 +1,6 @@
 *.DS_Store
 *.txt
+.pioenvs
+.piolibdeps
+platformio.ini
+.travis.yml

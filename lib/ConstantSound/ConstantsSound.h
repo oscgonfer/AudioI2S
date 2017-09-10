@@ -52,11 +52,9 @@ const double EQUALTAB[] = EQUALIZER_256;
 #define FILTER_256_REAL {0, 0, 0.01, 0.03, 0.05, 0.03, 0.01, 0, 0}
 #define FILTER_256_IMAG {0, 0, 0.01, 0.03, 0.05, 0.03, 0.01, 0, 0} 
 
-//Table 512 bufferSize
-const double FILTERTABR[] = FILTER_256_REAL;
-const double FILTERTABI[] = FILTER_256_IMAG;
-
-const int FILTERSIZE = 9;
+static const uint16_t FILTERSIZE = 9;
+static const uint32_t FILTERBLOCKSIZE = 20;
+static const int FILTERSTATE = 29;
 
 ///// DEBUGING
 const int PRIORITY = 6;

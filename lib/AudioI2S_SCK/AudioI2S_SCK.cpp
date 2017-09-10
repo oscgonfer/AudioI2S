@@ -1,4 +1,7 @@
 #include "AudioI2S_SCK.h"
+#include <stdlib.h> // For malloc/free
+#include <string.h> // For memset
+#include <stdio.h>  // For test case I/O
 
 AudioI2S_SCK::AudioI2S_SCK(uint32_t fftSize) :
   //BUFFER Sizes
@@ -80,7 +83,7 @@ int AudioI2S_SCK::available(){
   return _available;
 }
 
-int AudioI2S_SCK::Configure(int bitsPerSample,int channels, int bufferSize, int sampleRate){
+int AudioI2S_SCK::ConfigureFFT(int bitsPerSample,int channels, int bufferSize, int sampleRate){
     _bitsPerSample = bitsPerSample;
     _channels = channels;
     _bufferSize = bufferSize;
@@ -133,16 +136,10 @@ int AudioI2S_SCK::Configure(int bitsPerSample,int channels, int bufferSize, int 
       //Allocate frecuency dB buffers
       _spectrumBufferDB = calloc(_fftSize/2, sizeof(q31_t));
       _AspectrumBufferDB = calloc(_fftSize/2,sizeof(q31_t));
-    
-      //Allocate filter buffers
-      _filterBufferR = calloc(FILTERSIZE, sizeof(q31_t));
-      _filterBufferI = calloc(FILTERSIZE, sizeof(q31_t));
-      _sampleBufferFilt = calloc(FILTERSIZE, sizeof(q31_t));
-      
     }
 
     //Free all buffers in case of bad allocation
-    if (_sampleBuffer == NULL || _sampleBufferWin == NULL || _fftBuffer == NULL || _spectrumBuffer == NULL || _AspectrumBuffer == NULL || _spectrumBufferDB == NULL || _AspectrumBufferDB == NULL || _filterBufferR == NULL || _filterBufferI == NULL || _sampleBufferFilt == NULL) {
+    if (_sampleBuffer == NULL || _sampleBufferWin == NULL || _fftBuffer == NULL || _spectrumBuffer == NULL || _AspectrumBuffer == NULL || _spectrumBufferDB == NULL || _AspectrumBufferDB == NULL) {
 
       if (_sampleBuffer) {
         free(_sampleBuffer);
@@ -178,6 +175,72 @@ int AudioI2S_SCK::Configure(int bitsPerSample,int channels, int bufferSize, int 
         free(_AspectrumBufferDB);
         _AspectrumBufferDB = NULL;
       }
+      return 0;
+    }
+    SerialPrint("Configure FFT Successful",6,true);  
+    return 1;
+}
+
+int AudioI2S_SCK::ConfigureFilter(int bitsPerSample,int channels, int bufferSize, int sampleRate){
+    _bitsPerSample = bitsPerSample;
+    _channels = channels;
+    _bufferSize = bufferSize;
+    _sampleRate = sampleRate;
+
+    //General fool-proof checks
+    if (_bitsPerSample != 16 && _bitsPerSample != 32) {
+      return 0;
+    }
+
+    if (_channels != 1 && _channels != 2) {
+      return 0;
+    }
+
+    //Initialize Filter instance
+    if (_bitsPerSample == 16) {
+      //Table 512 bufferSize
+      q15_t FILTERTABR[] = FILTER_256_REAL;
+      arm_fir_init_q15(&_F16, FILTERSIZE, FILTERTABR, _Fstate16, FILTERBLOCKSIZE);
+    } else {
+      q31_t FILTERTABR[] = FILTER_256_REAL;
+      arm_fir_init_q31(&_F32, FILTERSIZE, FILTERTABR, _Fstate32, FILTERBLOCKSIZE);
+    }
+
+    //Allocate memory for buffers
+    if (bitsPerSample == 16) {
+      //Allocate time buffer
+      _sampleBuffer = calloc(_bufferSize, sizeof(q15_t));
+      _sampleBufferWin = calloc(_bufferSize, sizeof(q15_t));
+      
+      //Allocate filter buffers
+      _filterBufferR = calloc(FILTERSIZE, sizeof(q15_t));
+      _filterBufferI = calloc(FILTERSIZE, sizeof(q15_t));
+      _sampleBufferFilt = calloc(FILTERSIZE, sizeof(q15_t));
+
+    } else {
+      //Allocate time buffer
+      _sampleBuffer = calloc(_bufferSize, sizeof(q31_t));
+      _sampleBufferWin = calloc(_bufferSize, sizeof(q31_t));
+    
+      //Allocate filter buffers
+      _filterBufferR = calloc(FILTERSIZE, sizeof(q31_t));
+      _filterBufferI = calloc(FILTERSIZE, sizeof(q31_t));
+      _sampleBufferFilt = calloc(FILTERSIZE, sizeof(q31_t));
+      
+    }
+
+    //Free all buffers in case of bad allocation
+    if (_sampleBuffer == NULL || _sampleBufferWin == NULL || _filterBufferR == NULL || _filterBufferI == NULL || _sampleBufferFilt == NULL) {
+
+      if (_sampleBuffer) {
+        free(_sampleBuffer);
+        _sampleBuffer = NULL;
+      }
+
+      if (_sampleBufferWin) {
+        free(_sampleBufferWin);
+        _sampleBufferWin = NULL;
+      }
 
       if (_filterBufferR){
         free(_filterBufferR);
@@ -196,7 +259,7 @@ int AudioI2S_SCK::Configure(int bitsPerSample,int channels, int bufferSize, int 
 
       return 0;
     }
-    SerialPrint("Configure Successful",6,true);  
+    SerialPrint("Configure Filter Successful",6,true);  
     return 1;
 }
 
@@ -266,6 +329,7 @@ double AudioI2S_SCK::AudioTimeFilter(){
   Window(); 
   
   // Filter by convolution - applies a-weighting + equalization
+  FilterReset();
   FilterConv(); 
 
   // RMS CALCULATION 
@@ -291,7 +355,6 @@ double AudioI2S_SCK::AudioRMSRead_dB(){
 }
 
 void AudioI2S_SCK::GetBuffer(){
-
   //Get the hardcoded buffer
   //buffer is already treated (usable samples, averaged)
   q31_t* dstG = (q31_t*)_sampleBuffer;
@@ -317,9 +380,18 @@ void AudioI2S_SCK::Window(){
   }
 }
 
+void AudioI2S_SCK::FilterReset() {
+  // Reset state to 0
+  memset( &_Fstate16, 0, sizeof(_Fstate16) );
+  memset( &_Fstate32, 0, sizeof(_Fstate32) );
+  // Reset output
+  memset (&_sampleBufferFilt, 0, sizeof(_sampleBufferFilt));
+}
+
 void AudioI2S_SCK::FilterConv() {
   int _sign = 1;
   SerialPrint("FilterConv called", 7, true);
+  /*
   // REAL
   //arm_conv_partial_q31(q31_t* _sampleBuffer, _bufferSize, q31_t* _filterR, _filterSize, q31_t* _filterBufferR, _filterSize/2, _bufferSize);
   arm_conv_partial_fast_q31((q31_t*) _sampleBufferWin, _bufferSize, (q31_t*) FILTERTABR, FILTERSIZE, (q31_t*) _filterBufferR, FILTERSIZE/2, _bufferSize);
@@ -329,12 +401,20 @@ void AudioI2S_SCK::FilterConv() {
   //arm_conv_partial_q31(q31_t* _sampleBuffer, _bufferSize, q31_t* _filterI, _filterSize, q31_t* _filterBufferI, _filterSize/2, _bufferSize);
   arm_conv_partial_fast_q31((q31_t*) _sampleBufferWin, _bufferSize, (q31_t*) FILTERTABI, FILTERSIZE, (q31_t*) _filterBufferI, FILTERSIZE/2, _bufferSize);
   SerialPrint("FilterConv Imag done", 7, true);
+  */
+
+  if (_bitsPerSample == 16) {
+    arm_fir_q15( &_F16, (q15_t *)_sampleBufferWin, (q15_t *)_sampleBufferFilt, _bufferSize);
+  } else {
+    arm_fir_q31( &_F32, (q31_t *)_sampleBufferWin, (q31_t *)_sampleBufferFilt, _bufferSize);
+  }
 
   //COMPLEX MAGNITUDE
-  q31_t* filR = (q31_t*)_filterBufferR;
-  q31_t* filI= (q31_t*)_filterBufferI;
-  q31_t* fil = (q31_t*) _sampleBufferFilt;
+  //q15_t* filR = (q15_t*)_filterBufferR;
+  //q31_t* filI= (q31_t*)_filterBufferI;
+  //q31_t* fil = (q31_t*) _sampleBufferFilt;
 
+  /*
   int downscaling_factor = 100;
   for (int i = 0 ; i < _bufferSize; i++) {
     *filR/=downscaling_factor;
@@ -348,14 +428,8 @@ void AudioI2S_SCK::FilterConv() {
     filI++;
     fil++;
   }
-
-  // Print filter
+  */
   SerialPrint("*****", 7, true);
-
-  for (int i = 0; i < FILTERSIZE; i ++) {
-    SerialPrint(String(i) + "\t" + String(FILTERTABR[i]) + "\t" + String(FILTERTABI[i]),7,true);
-  }
-
 }
 
 void AudioI2S_SCK::FFT(){

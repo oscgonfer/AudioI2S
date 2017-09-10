@@ -25,7 +25,7 @@ void setup() {
 	Serial.begin(115200);
 
  	// configure the I2S input as the input for the FFT analyzer
-	if (!AudioI2S_SCK.Configure(bitsPerSample, channels, bufferSize, sampleRate)){
+	if (!AudioI2S_SCK.ConfigureFilter(bitsPerSample, channels, bufferSize, sampleRate)){
 		Serial.println("Failed to init the Audio!");
 		while (1); // do nothing
 	}
@@ -54,7 +54,7 @@ void loop() {
     //Serial.println("Audio I2S SCK available");
 		rms_AspecBDB = AudioI2S_SCK.AudioSpectrumRead(spectrum, Aspectrum, spectrumDB, AspectrumDB, fftSize);
  		rms_specBDB = AudioI2S_SCK.AudioRMSRead_dB();
-    //rms_FilterADB = AudioI2S_SCK.AudioTimeFilter();
+    rms_FilterADB = AudioI2S_SCK.AudioTimeFilter();
 
     Serial.println("Buffer Results (arduino)");
     

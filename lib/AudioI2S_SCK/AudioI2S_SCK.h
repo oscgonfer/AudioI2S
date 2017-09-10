@@ -12,7 +12,8 @@ public:
   AudioI2S_SCK(uint32_t fftSize); //
   virtual ~AudioI2S_SCK(); //
 
-  int Configure(int bitsPerSample,int channels, int bufferSize, int sampleRate);
+  int ConfigureFFT(int bitsPerSample,int channels, int bufferSize, int sampleRate);
+  int ConfigureFilter(int bitsPerSample,int channels, int bufferSize, int sampleRate);
   double AudioSpectrumRead(int spectrum[], int Aspectrum [], int spectrumDB[], int AspectrumDB[], int fftSize);
   double AudioTimeFilter();
   double AudioRMSRead_dB();
@@ -23,6 +24,7 @@ protected:
   virtual void GetBuffer();
   virtual void Window();
   virtual void FilterConv();
+  virtual void FilterReset();
   virtual void FFT();
   virtual void A_WEIGHTING();
   virtual double RMSG(void *inputBuffer, int inputSize, int typeRMS);
@@ -65,7 +67,13 @@ private:
   int _RMSAvailable;
   int _bufferAvailable;
   int _available;
-
+  
+  //FFT
   arm_rfft_instance_q15 _S15;
   arm_rfft_instance_q31 _S31;
+  //FILTER
+  arm_fir_instance_q15 _F16;
+  arm_fir_instance_q31 _F32;
+  q15_t _Fstate16[FILTERSTATE];
+  q31_t _Fstate32[FILTERSTATE];
 };
