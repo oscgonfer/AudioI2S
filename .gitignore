@@ -4,3 +4,6 @@
 .piolibdeps
 platformio.ini
 .travis.yml
+*.travis.yml
+*.yml
+*.ini
