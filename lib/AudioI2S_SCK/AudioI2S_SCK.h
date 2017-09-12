@@ -19,9 +19,10 @@ public:
   double AudioRMSRead_dB();
   void SerialPrint(String ToPrint, int PrioFac, bool NewLine);//
   int available();
+  //double time();
 
 protected:
-  virtual void GetBuffer();
+  virtual void GetBuffer(bool windowed);
   virtual void Window();
   virtual void FilterConv();
   virtual void FilterReset();
@@ -50,6 +51,9 @@ private:
   double _rms_AspecBDB;
   double _rmsFilterA;
   double _rmsFilterADB;
+  //CALCULATION TIME
+  //double time_before;
+  //double time_after;
   //BUFFERS
   void* _sampleBuffer;
   void* _sampleBufferWin;
@@ -59,8 +63,6 @@ private:
   void* _fftBufferDB;
   void* _spectrumBufferDB;
   void* _AspectrumBufferDB;
-  void* _filterBufferR;
-  void* _filterBufferI;
   void* _sampleBufferFilt;
   //EXTRAS
   int _SpectrumAvailable;
