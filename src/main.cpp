@@ -4,7 +4,7 @@
 const uint32_t fftSize = 512;
 const int bitsPerSample = 32;
 const int channels = 2;
-const int bufferSize = 256;
+const int bufferSize = 32;
 const int sampleRate = 44100;
 
 ///// OUTPUT

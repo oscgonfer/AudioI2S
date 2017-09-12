@@ -51,6 +51,7 @@ const double EQUALTAB[] = EQUALIZER_256;
 static const uint16_t FILTERSIZE = 9;
 static const uint32_t FILTERBLOCKSIZE = 20;
 static const int FILTERSTATE = 29;
+static const int OUTFILTERSIZE = 532;
 
 ///// DEBUGING
 const int PRIORITY = 5;

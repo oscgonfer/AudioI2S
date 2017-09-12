@@ -203,7 +203,7 @@ int AudioI2S_SCK::ConfigureFilter(int bitsPerSample,int channels, int bufferSize
       _sampleBufferWin = calloc(_bufferSize, sizeof(q15_t));
       
       //Allocate filter buffers
-      _sampleBufferFilt = calloc(FILTERSIZE, sizeof(q15_t));
+      _sampleBufferFilt = calloc(OUTFILTERSIZE, sizeof(q15_t));
 
     } else {
       //Allocate time buffer
@@ -211,7 +211,7 @@ int AudioI2S_SCK::ConfigureFilter(int bitsPerSample,int channels, int bufferSize
       _sampleBufferWin = calloc(_bufferSize, sizeof(q31_t));
     
       //Allocate filter buffers
-      _sampleBufferFilt = calloc(FILTERSIZE, sizeof(q31_t));
+      _sampleBufferFilt = calloc(OUTFILTERSIZE, sizeof(q31_t));
       
     }
 
@@ -306,7 +306,7 @@ double AudioI2S_SCK::AudioTimeFilter(){
  
   // Downscale the sample buffer for proper functioning 
   int _downscaling_filter = 128;
-  DownScaling(_sampleBufferWin, _bufferSize, _downscaling_filter); 
+  DownScaling(_sampleBuffer, _bufferSize, _downscaling_filter); 
   
   // Filter by convolution - applies a-weighting + equalization + window
   FilterReset();
@@ -340,7 +340,7 @@ void AudioI2S_SCK::GetBuffer(bool windowed){
   //Get the hardcoded buffer
   //buffer is already treated (usable samples, averaged)
   //If the filter contains the window, we save the buffer into the _sampleBufferWin
-  if (!windowed) {
+  /*if (!windowed) {
       q31_t* dstG = (q31_t*)_sampleBuffer;
       for (int i = 0; i < _bufferSize; i ++) {
         int value = buffer[i];
@@ -348,14 +348,14 @@ void AudioI2S_SCK::GetBuffer(bool windowed){
         dstG++;
       }
   }
-  else {
-      q31_t* dstG = (q31_t*)_sampleBufferWin;
+  else {*/
+      q31_t* dstG = (q31_t*)_sampleBuffer;
       for (int i = 0; i < _bufferSize; i ++) {
         int value = buffer[i];
         *dstG = value;
         dstG++;
       }
-  }
+  //}
 }
 
 void AudioI2S_SCK::Window(){
@@ -365,9 +365,7 @@ void AudioI2S_SCK::Window(){
   //Apply hann window in time-domain
   for (int i = 0; i < _bufferSize; i ++) {
     double window = HANN[i];
-
     *dstW = (*srcW) * window;
-    //SerialPrint(String(i) + "\t" + String(*srcW) + "\t" +  String(window) + "\t" +  String(*dstW),6,true);
     dstW++;
     srcW++;
   }
@@ -396,18 +394,17 @@ void AudioI2S_SCK::FilterConv() {
   SerialPrint("FilterConv Imag done", 7, true);
   */
 
-  /*
-  q31_t* spG = (q31_t*)_sampleBufferWin;
+  q31_t* spG = (q31_t*)_sampleBuffer;
   for (int i = 0; i < _bufferSize; i ++) {
     SerialPrint(String(i) + "\t" + String(*spG),6,true);
     spG++;
   }
-  */
+  
 
   if (_bitsPerSample == 16) {
-    arm_fir_q15( &_F16, (q15_t *)_sampleBufferWin, (q15_t *)_sampleBufferFilt, _bufferSize);
+    arm_fir_q15( &_F16, (q15_t *)_sampleBuffer, (q15_t *)_sampleBufferFilt, FILTERBLOCKSIZE);
   } else {
-    arm_fir_q31( &_F32, (q31_t *)_sampleBufferWin, (q31_t *)_sampleBufferFilt, _bufferSize);
+    arm_fir_q31( &_F32, (q31_t *)_sampleBuffer, (q31_t *)_sampleBufferFilt, FILTERBLOCKSIZE);
   }
 
   //COMPLEX MAGNITUDE
