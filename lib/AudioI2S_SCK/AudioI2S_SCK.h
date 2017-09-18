@@ -6,6 +6,13 @@
 #include "ConstantsSound.h"
 #include "RawData.h"
 
+//FILTER
+typedef struct
+{
+  arm_fir_instance_q31 _Q31;
+  q31_t _FstateQ31[FILTERSTATE];
+} filterType32;
+
 class AudioI2S_SCK
 {
 public:
@@ -19,20 +26,24 @@ public:
   double AudioRMSRead_dB();
   void SerialPrint(String ToPrint, int PrioFac, bool NewLine);//
   int available();
-  //double time();
 
 protected:
   virtual void GetBuffer(bool windowed);
   virtual void Window();
-  virtual void FilterConv();
-  virtual void FilterReset();
   virtual void FFT();
   virtual void A_WEIGHTING();
-  virtual double RMSG(void *inputBuffer, int inputSize, int typeRMS);
+  virtual double RMSG(void *inputBuffer, int inputSize, int typeRMS, int factor);
   virtual void UpScaling(void *vector, int vectorSize, int factor);
   virtual void DownScaling(void *vector, int vectorSize, int factor);
   virtual void EQUALIZING();
   virtual void Convert2DB(void *vectorSource, void *vectorDest, int vectorSize);
+
+  virtual filterType32 *FilterCreate( void );
+  virtual void FilterReset(filterType32 * pThis);
+  virtual void FilterDestroy(filterType32 *pObject);
+  virtual void FilterInit(filterType32 * pThis);  
+  virtual int FilterConv(filterType32 * pThis, q31_t * pInput, q31_t * pOutput, unsigned int count );
+  virtual int FilterInChunks(filterType32 * pThis, void * pInput, void * pOutput, int length);
 
 private:
   //BUFFER Sizes
@@ -51,9 +62,6 @@ private:
   double _rms_AspecBDB;
   double _rmsFilterA;
   double _rmsFilterADB;
-  //CALCULATION TIME
-  //double time_before;
-  //double time_after;
   //BUFFERS
   void* _sampleBuffer;
   void* _sampleBufferWin;
@@ -69,13 +77,6 @@ private:
   int _RMSAvailable;
   int _bufferAvailable;
   int _available;
-  
   //FFT
-  arm_rfft_instance_q15 _S15;
   arm_rfft_instance_q31 _S31;
-  //FILTER
-  arm_fir_instance_q15 _F16;
-  arm_fir_instance_q31 _F32;
-  q15_t _Fstate16[FILTERSTATE];
-  q31_t _Fstate32[FILTERSTATE];
 };

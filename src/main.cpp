@@ -4,7 +4,7 @@
 const uint32_t fftSize = 512;
 const int bitsPerSample = 32;
 const int channels = 2;
-const int bufferSize = 32;
+const int bufferSize = 512;
 const int sampleRate = 44100;
 
 ///// OUTPUT
@@ -16,7 +16,6 @@ int AspectrumDB[fftSize/2];
 double rms_specBDB = 0;
 double rms_AspecBDB = 0;
 double rms_FilterADB = 0;
-double time_Filter = 0;
 
 ///// DEFINE OBJECT
 AudioI2S_SCK AudioI2S_SCK(fftSize);
@@ -56,8 +55,6 @@ void loop() {
  		//rms_specBDB = AudioI2S_SCK.AudioRMSRead_dB();
     rms_FilterADB = AudioI2S_SCK.AudioTimeFilter();
 
-    //time_Filter = AudioI2S_SCK.time();
-
     /*
     Serial.println("Buffer Results (arduino)");
     
@@ -72,15 +69,14 @@ void loop() {
     		Serial.print("\t");
     		Serial.println(AspectrumDB[i]);
     	}
-    
+    */
     Serial.println("*******");
     
-    Serial.println("rms_specBDB\t" + String(rms_specBDB));
-    Serial.println("rms_AspecBDB\t" + String(rms_AspecBDB));
-    */
+    //Serial.println("rms_specBDB\t" + String(rms_specBDB));
+    //Serial.println("rms_AspecBDB\t" + String(rms_AspecBDB));
+    
 
     Serial.println("rms_FilterADB\t" + String(rms_FilterADB));
-    Serial.println("Calculation time\t" + String(time_Filter));
     
     Serial.println("*******");
     

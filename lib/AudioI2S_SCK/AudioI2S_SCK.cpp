@@ -80,7 +80,7 @@ int AudioI2S_SCK::ConfigureFFT(int bitsPerSample,int channels, int bufferSize, i
     _sampleRate = sampleRate;
 
     //General fool-proof checks
-    if (_bitsPerSample != 16 && _bitsPerSample != 32) {
+    if (_bitsPerSample != 32) {
       return 0;
     }
 
@@ -89,31 +89,11 @@ int AudioI2S_SCK::ConfigureFFT(int bitsPerSample,int channels, int bufferSize, i
     }
 
     //Initialize fft
-    if (_bitsPerSample == 16) {
-      if (ARM_MATH_SUCCESS != arm_rfft_init_q15(&_S15, _fftSize, 0, 1)) {
-        return 0;
-      }
-    } else {
-      if (ARM_MATH_SUCCESS != arm_rfft_init_q31(&_S31, _fftSize, 0, 1)) {
-        return 0;
-      }
+    if (ARM_MATH_SUCCESS != arm_rfft_init_q31(&_S31, _fftSize, 0, 1)) {
+      return 0;
     }
 
     //Allocate memory for buffers
-    if (bitsPerSample == 16) {
-      //Allocate time buffer
-      _sampleBuffer = calloc(_bufferSize, sizeof(q15_t));
-      _sampleBufferWin = calloc(_bufferSize, sizeof(q15_t));
-      
-      //Allocate frequency buffers
-      _fftBuffer = calloc(_fftSize, sizeof(q15_t));
-      _spectrumBuffer = calloc(_fftSize/2, sizeof(q15_t));
-      _AspectrumBuffer = calloc(_fftSize/2,sizeof(q15_t));
-      
-      //Allocate frecuency dB buffers
-      _spectrumBufferDB = calloc(_fftSize/2, sizeof(q15_t));
-      _AspectrumBufferDB = calloc(_fftSize/2,sizeof(q15_t));
-    } else {
       //Allocate time buffer
       _sampleBuffer = calloc(_bufferSize, sizeof(q31_t));
       _sampleBufferWin = calloc(_bufferSize, sizeof(q31_t));
@@ -126,7 +106,6 @@ int AudioI2S_SCK::ConfigureFFT(int bitsPerSample,int channels, int bufferSize, i
       //Allocate frecuency dB buffers
       _spectrumBufferDB = calloc(_fftSize/2, sizeof(q31_t));
       _AspectrumBufferDB = calloc(_fftSize/2,sizeof(q31_t));
-    }
 
     //Free all buffers in case of bad allocation
     if (_sampleBuffer == NULL || _sampleBufferWin == NULL || _fftBuffer == NULL || _spectrumBuffer == NULL || _AspectrumBuffer == NULL || _spectrumBufferDB == NULL || _AspectrumBufferDB == NULL) {
@@ -178,7 +157,7 @@ int AudioI2S_SCK::ConfigureFilter(int bitsPerSample,int channels, int bufferSize
     _sampleRate = sampleRate;
 
     //General fool-proof checks
-    if (_bitsPerSample != 16 && _bitsPerSample != 32) {
+    if (_bitsPerSample != 32) {
       return 0;
     }
 
@@ -186,37 +165,15 @@ int AudioI2S_SCK::ConfigureFilter(int bitsPerSample,int channels, int bufferSize
       return 0;
     }
 
-    //Initialize Filter instance
-    if (_bitsPerSample == 16) {
-      //Table 512 bufferSize
-      q15_t FILTERTABR[] = FILTER_256_REAL;
-      arm_fir_init_q15(&_F16, FILTERSIZE, FILTERTABR, _Fstate16, FILTERBLOCKSIZE);
-    } else {
-      q31_t FILTERTABR[] = FILTER_256_REAL;
-      arm_fir_init_q31(&_F32, FILTERSIZE, FILTERTABR, _Fstate32, FILTERBLOCKSIZE);
-    }
-
     //Allocate memory for buffers
-    if (bitsPerSample == 16) {
-      //Allocate time buffer
-      _sampleBuffer = calloc(_bufferSize, sizeof(q15_t));
-      _sampleBufferWin = calloc(_bufferSize, sizeof(q15_t));
-      
-      //Allocate filter buffers
-      _sampleBufferFilt = calloc(OUTFILTERSIZE, sizeof(q15_t));
 
-    } else {
       //Allocate time buffer
       _sampleBuffer = calloc(_bufferSize, sizeof(q31_t));
       _sampleBufferWin = calloc(_bufferSize, sizeof(q31_t));
-    
-      //Allocate filter buffers
-      _sampleBufferFilt = calloc(OUTFILTERSIZE, sizeof(q31_t));
-      
-    }
+      _sampleBufferFilt = calloc(_bufferSize,sizeof(q31_t)); //OUTFILTERSIZE?
 
     //Free all buffers in case of bad allocation
-    if (_sampleBuffer == NULL || _sampleBufferWin == NULL ||  _sampleBufferFilt == NULL) {
+    if (_sampleBuffer == NULL || _sampleBufferWin == NULL || _sampleBufferFilt == NULL) {
 
       if (_sampleBuffer) {
         free(_sampleBuffer);
@@ -260,8 +217,8 @@ double AudioI2S_SCK::AudioSpectrumRead(int spectrum[], int Aspectrum [],int spec
   A_WEIGHTING();
 
   // RMS CALCULATION  
-  _rms_specB = RMSG(_spectrumBuffer, _fftSize/2, 2); 
-  _rms_AspecB = RMSG(_AspectrumBuffer, _fftSize/2, 2); 
+  _rms_specB = RMSG(_spectrumBuffer, _fftSize/2, 2, CONST_FACTOR); 
+  _rms_AspecB = RMSG(_AspectrumBuffer, _fftSize/2, 2, CONST_FACTOR); 
   
   _rms_specBDB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2)*_rms_specB)); 
   _rms_AspecBDB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2)*_rms_AspecB)); 
@@ -288,15 +245,10 @@ double AudioI2S_SCK::AudioSpectrumRead(int spectrum[], int Aspectrum [],int spec
   return _rms_AspecBDB; 
 }
 
-/*
-double AudioI2S_SCK::time(){
-  double time_delta = time_after-time_before;
-  return time_delta;
-}
-*/
-
 double AudioI2S_SCK::AudioTimeFilter(){ 
    
+  filterType32 *filter = FilterCreate(); // Create an instance of the filter
+
   if (!_bufferAvailable) { 
     return 0; 
   } 
@@ -305,27 +257,48 @@ double AudioI2S_SCK::AudioTimeFilter(){
   GetBuffer(true); 
  
   // Downscale the sample buffer for proper functioning 
-  int _downscaling_filter = 128;
-  DownScaling(_sampleBuffer, _bufferSize, _downscaling_filter); 
+  int downscaling_filter = 256;
+  
+  int _time_before_Down = millis();
+  DownScaling(_sampleBufferWin, _bufferSize, downscaling_filter); 
+  int _time_after_Down = millis();
+  int time_delta_Down = _time_after_Down-_time_before_Down;
   
   // Filter by convolution - applies a-weighting + equalization + window
-  FilterReset();
-  //time_before = millis();
-  FilterConv(); 
-  //time_after = millis();
+  FilterReset(filter);
+  int _time_before_FIR = millis();
+  int samplesProcessed = FilterInChunks(filter, _sampleBufferWin, _sampleBufferFilt, _bufferSize);
+  int _time_after_FIR = millis();
+  int time_delta_FIR = _time_after_FIR-_time_before_FIR;
+  SerialPrint("samplesProcessed = \t"+ String(samplesProcessed),6,true);
+  SerialPrint("time_delta_FIR : \t" + String(time_delta_FIR),6,true);
 
-  // RMS CALCULATION 
-  _rmsFilterA = RMSG(_sampleBufferFilt, _bufferSize, 1) * _downscaling_filter; 
-  _rmsFilterADB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2)*_rmsFilterA)); 
+  q31_t* sBW = (q31_t*)_sampleBufferWin;
+  q31_t* sBF = (q31_t*)_sampleBufferFilt;
   
+  for (int i = 0; i < (_bufferSize); i ++) {
+    SerialPrint(String(i) + "\t" + String(*sBW) + "\t"+String(*sBF),6,true);
+    sBW++;
+    sBF++;
+  }
+  
+  // RMS CALCULATION 
+  int _time_before_RMS = millis();
+  _rmsFilterA = RMSG(_sampleBufferFilt, _bufferSize, 3, downscaling_filter); 
+  _rmsFilterADB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2)*_rmsFilterA)); 
+  int _time_after_RMS = millis();
+  int time_delta_RMS = _time_after_RMS-_time_before_RMS;
+  SerialPrint("time_delta_RMS : \t" + String(time_delta_RMS),6,true);
+
   /*
-  // UPSCALING THE BUFFERS 
-  // To be removed if wanted
-  UpScaling(_sampleBuffer,_bufferSize,CONST_FACTOR); 
-  UpScaling(_sampleBufferWin,_bufferSize,CONST_FACTOR); 
-  UpScaling(_sampleBufferFilt,_bufferSize,CONST_FACTOR); 
+    // UPSCALING THE BUFFERS 
+    // To be removed if wanted
+    UpScaling(_sampleBuffer,_bufferSize,CONST_FACTOR); 
+    UpScaling(_sampleBufferWin,_bufferSize,CONST_FACTOR); 
+    UpScaling(_sampleBufferFilt,_bufferSize,CONST_FACTOR); 
   */
   
+  FilterDestroy(filter);
   // Set available to 0 to wait for new process 
   _bufferAvailable = 0; 
 
@@ -336,11 +309,57 @@ double AudioI2S_SCK::AudioRMSRead_dB(){
   return _rms_specBDB;
 }
 
+int AudioI2S_SCK::FilterInChunks(filterType32* pThis, void* pInput, void* pOutput, int length){
+  int processedLength = 0;
+  unsigned int chunkLength, outLength;
+
+  q31_t* _pInpBuffer = (q31_t*) pInput;
+  q31_t* _pOutBuffer = (q31_t*) pOutput;
+
+  while( length > 0 )
+  {
+    // Choose random chunkLength from 0 - 15
+    chunkLength = 30;
+    // Limit chunk length to the number of remaining samples                                  
+    if( chunkLength > length ) chunkLength = length;  
+    // Filter the block and determine the number of returned samples   
+    outLength = FilterConv(pThis, _pInpBuffer, _pOutBuffer, chunkLength);
+    SerialPrint("outLength\t" + String(outLength),6,true);
+    // Update the output pointer
+    _pOutBuffer += outLength;            
+    // Update the total number of samples output           
+    processedLength += outLength;
+    // Update the input pointer                  
+    _pInpBuffer += chunkLength;
+    // Update the number of samples remaining                        
+    length -= chunkLength;
+    // Cycle the simple random number generator        
+
+  }
+
+  // Return the number of samples processed
+  return processedLength;                         
+}
+
+int AudioI2S_SCK::FilterConv(filterType32 * pThis, q31_t* pInputChunk, q31_t* pOutputChunk, unsigned int count) {
+  arm_fir_q31( &pThis->_Q31, pInputChunk, pOutputChunk, count);
+  q31_t* pICprint =  pInputChunk;
+  q31_t* pOCprint =  pOutputChunk;
+
+  for (int i=0;i<count;i++){
+    SerialPrint(String(i) + "\t" + String(*pICprint) + "\t" + String(*pOCprint),6,true);
+    pICprint++;
+    pOCprint++;
+  }
+  SerialPrint("CHUNK COMPLETED",6,true);
+  return count;
+}
+
 void AudioI2S_SCK::GetBuffer(bool windowed){
   //Get the hardcoded buffer
   //buffer is already treated (usable samples, averaged)
   //If the filter contains the window, we save the buffer into the _sampleBufferWin
-  /*if (!windowed) {
+  if (!windowed) {
       q31_t* dstG = (q31_t*)_sampleBuffer;
       for (int i = 0; i < _bufferSize; i ++) {
         int value = buffer[i];
@@ -348,14 +367,43 @@ void AudioI2S_SCK::GetBuffer(bool windowed){
         dstG++;
       }
   }
-  else {*/
-      q31_t* dstG = (q31_t*)_sampleBuffer;
+  else {
+      q31_t* dstG = (q31_t*)_sampleBufferWin;
       for (int i = 0; i < _bufferSize; i ++) {
         int value = buffer[i];
         *dstG = value;
         dstG++;
       }
-  //}
+  }
+}
+
+filterType32 *AudioI2S_SCK::FilterCreate(void){
+  filterType32 *result = (filterType32 *)malloc( sizeof(filterType32) ); // Allocate memory for the object
+  FilterInit(result);                     // Initialize it
+  return result;                                // Return the result
+}
+
+void AudioI2S_SCK::FilterInit(filterType32 * pThis){
+  q31_t FILTERTAB[] = FILTER_FIR;
+
+  for (int i = 0; i < FILTERSIZE; i++){
+    SerialPrint(String(i)+"\t"+String(FILTERTAB[i]),6,true);
+  }
+  arm_fir_init_q31(&pThis->_Q31, FILTERSIZE, FILTERTAB, pThis->_FstateQ31, FILTERBLOCKSIZE);
+  FilterReset( pThis );
+}
+
+void AudioI2S_SCK::FilterDestroy(filterType32 *pObject ){
+  free( pObject );
+  free( _sampleBufferFilt);
+  free(_sampleBufferWin);
+}
+
+void AudioI2S_SCK::FilterReset(filterType32 * pThis ) {
+  // Reset state to 0
+  memset( &pThis->_FstateQ31, 0, sizeof( pThis->_FstateQ31) );
+  // Reset output
+  memset(_sampleBufferFilt,0,sizeof(_sampleBufferFilt));
 }
 
 void AudioI2S_SCK::Window(){
@@ -369,64 +417,6 @@ void AudioI2S_SCK::Window(){
     dstW++;
     srcW++;
   }
-}
-
-void AudioI2S_SCK::FilterReset() {
-  // Reset state to 0
-  memset( &_Fstate16, 0, sizeof(_Fstate16) );
-  memset( &_Fstate32, 0, sizeof(_Fstate32) );
-  // Reset output
-  memset (&_sampleBufferFilt, 0, sizeof(_sampleBufferFilt));
-}
-
-void AudioI2S_SCK::FilterConv() {
-  SerialPrint("FilterConv call done", 6, true);
-
-  /*
-  // REAL
-  //arm_conv_partial_q31(q31_t* _sampleBuffer, _bufferSize, q31_t* _filterR, _filterSize, q31_t* _filterBufferR, _filterSize/2, _bufferSize);
-  arm_conv_partial_fast_q31((q31_t*) _sampleBufferWin, _bufferSize, (q31_t*) FILTERTABR, FILTERSIZE, (q31_t*) _filterBufferR, FILTERSIZE/2, _bufferSize);
-  SerialPrint("FilterConv Real done", 7, true);
-
-  //IMAG
-  //arm_conv_partial_q31(q31_t* _sampleBuffer, _bufferSize, q31_t* _filterI, _filterSize, q31_t* _filterBufferI, _filterSize/2, _bufferSize);
-  arm_conv_partial_fast_q31((q31_t*) _sampleBufferWin, _bufferSize, (q31_t*) FILTERTABI, FILTERSIZE, (q31_t*) _filterBufferI, FILTERSIZE/2, _bufferSize);
-  SerialPrint("FilterConv Imag done", 7, true);
-  */
-
-  q31_t* spG = (q31_t*)_sampleBuffer;
-  for (int i = 0; i < _bufferSize; i ++) {
-    SerialPrint(String(i) + "\t" + String(*spG),6,true);
-    spG++;
-  }
-  
-
-  if (_bitsPerSample == 16) {
-    arm_fir_q15( &_F16, (q15_t *)_sampleBuffer, (q15_t *)_sampleBufferFilt, FILTERBLOCKSIZE);
-  } else {
-    arm_fir_q31( &_F32, (q31_t *)_sampleBuffer, (q31_t *)_sampleBufferFilt, FILTERBLOCKSIZE);
-  }
-
-  //COMPLEX MAGNITUDE
-  //q15_t* filR = (q15_t*)_filterBufferR;
-  //q31_t* filI= (q31_t*)_filterBufferI;
-  //q31_t* fil = (q31_t*) _sampleBufferFilt;
-
-  /*
-  int downscaling_factor = 100;
-  for (int i = 0 ; i < _bufferSize; i++) {
-    *filR/=downscaling_factor;
-    *filI/=downscaling_factor;
-    *fil = (*filR) * (*filR);
-    _sign = *filR/abs(*filR);
-    *fil += (*filI) * (*filI);
-    *fil = _sign*sqrt(*fil)*downscaling_factor;
-    // SerialPrint(String(i) + "\t" + String(*filR) + "\t" + String(*filI) + "\t" + String(*fil),7,true);
-    filR++;
-    filI++;
-    fil++;
-  }
-  */
 }
 
 void AudioI2S_SCK::FFT(){
@@ -450,9 +440,6 @@ void AudioI2S_SCK::FFT(){
   q31_t* _pspectrumBuffer = (q31_t*) _spectrumBuffer;
 
   for (int i = 0; i < _fftSize; i +=2) {
-
-    SerialPrint(String(i) + "\t",6,false);
-    
     *_pspectrumBuffer = (*_pfftBuffer) * (*_pfftBuffer);
     _pfftBuffer++;
     
@@ -467,7 +454,6 @@ void AudioI2S_SCK::FFT(){
     _pfftBuffer++;
     _pspectrumBuffer++;
   }
-  SerialPrint("Finish time for module calculation\t"+String(millis()),6,true);
 }
 
 void AudioI2S_SCK::EQUALIZING(){
@@ -518,7 +504,7 @@ void AudioI2S_SCK::DownScaling(void *vector, int vectorSize, int factor){
     }
 }
 
-double AudioI2S_SCK::RMSG(void *inputBuffer, int inputSize, int typeRMS){ 
+double AudioI2S_SCK::RMSG(void *inputBuffer, int inputSize, int typeRMS, int FACTOR){ 
   //typeRMS = 1 if time domain -- typeRMS = 2 if spectrum domain
   double _rmsOut = 0;
   const q31_t* _pBuffer = (const q31_t*) inputBuffer; 
@@ -527,21 +513,23 @@ double AudioI2S_SCK::RMSG(void *inputBuffer, int inputSize, int typeRMS){
     _rmsOut += (*_pBuffer) * (*_pBuffer); 
     _pBuffer++; 
   } 
-  _rmsOut = sqrt(_rmsOut)/sqrt(inputSize); 
+  _rmsOut = sqrt(_rmsOut/inputSize); 
   
   switch (typeRMS) {
     case 1: //TIME DOMAIN SIGNAL
-      _rmsOut = _rmsOut * 1/RMS_HANN * CONST_FACTOR; 
+      _rmsOut = _rmsOut * 1/RMS_HANN* FACTOR; 
       break;
     case 2: //SPECTRUM IN FREQ DOMAIN
-      _rmsOut = _rmsOut * 1/RMS_HANN * CONST_FACTOR * sqrt(inputSize) / sqrt(2); 
+      _rmsOut = _rmsOut * 1/RMS_HANN * FACTOR * sqrt(inputSize) / sqrt(2); 
       break;
+    case 3:
+      _rmsOut = _rmsOut * FACTOR; 
   }
   
   return _rmsOut;
  
-  //_RMSAvailable = 1; 
- } 
+  //_RMSAvailable = 1;  
+} 
 
 void AudioI2S_SCK::Convert2DB(void *vectorSource, void *vectorDest, int vectorSize){
 
