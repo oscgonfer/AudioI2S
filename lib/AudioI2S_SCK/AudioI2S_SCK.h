@@ -2,15 +2,18 @@
 
 #define ARM_MATH_CM0PLUS
 #include <arm_math.h>
+#define __FPU_PRESENT 0
 
 #include "ConstantsSound.h"
 #include "RawData.h"
+#include "fir_coeffs.h"
 
 //FILTER
 typedef struct
 {
   arm_fir_instance_q31 _Q31;
-  q31_t _FstateQ31[FILTERSTATE];
+  q31_t _FstateQ31[FILTERSIZE+FILTERBLOCKSIZE];
+  q31_t _CoeffsQ31[FILTERSIZE];
 } filterType32;
 
 class AudioI2S_SCK
@@ -71,7 +74,9 @@ private:
   void* _fftBufferDB;
   void* _spectrumBufferDB;
   void* _AspectrumBufferDB;
-  void* _sampleBufferFilt;
+  void* _sampleBufferFilt; //OUTFILTERSIZE?
+  void* _sampleBufferFiltF32;
+    
   //EXTRAS
   int _SpectrumAvailable;
   int _RMSAvailable;
