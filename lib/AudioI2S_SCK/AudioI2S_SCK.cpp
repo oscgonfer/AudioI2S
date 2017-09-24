@@ -252,10 +252,8 @@ double AudioI2S_SCK::AudioTimeFilter(){
   GetBuffer(true); 
  
   // Downscale the sample buffer for proper functioning 
-  int downscaling_filter = 128;
-
   int _time_before_Down = millis();
-  DownScaling(_sampleBufferWin, _bufferSize, downscaling_filter); 
+  DownScaling(_sampleBufferWin, _bufferSize, CONST_FACTOR); 
   int _time_after_Down = millis();
   int time_delta_Down = _time_after_Down-_time_before_Down;
   
@@ -279,10 +277,11 @@ double AudioI2S_SCK::AudioTimeFilter(){
   
   // RMS CALCULATION 
   int _time_before_RMS = millis();
-  _rmsFilterA = RMSG(_sampleBufferFilt, _bufferSize, 3, downscaling_filter); 
+  _rmsFilterA = RMSG(_sampleBufferFilt, _bufferSize, 3, CONST_FACTOR); 
   _rmsFilterADB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2)*_rmsFilterA)); 
   int _time_after_RMS = millis();
   int time_delta_RMS = _time_after_RMS-_time_before_RMS;
+  
   SerialPrint("samplesProcessed = \t"+ String(samplesProcessed),6,true);
   SerialPrint("time_delta_Down : \t" + String(time_delta_Down),6,true);
   SerialPrint("time_delta_FIR : \t" + String(time_delta_FIR),6,true);
