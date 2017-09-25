@@ -2,9 +2,19 @@
 
 #define ARM_MATH_CM0PLUS
 #include <arm_math.h>
+#define __FPU_PRESENT 0
 
 #include "ConstantsSound.h"
 #include "RawData.h"
+#include "fir_coeffs.h"
+
+//FILTER
+typedef struct
+{
+  arm_fir_instance_q31 _Q31;
+  q31_t _FstateQ31[FILTERSIZE+FILTERBLOCKSIZE];
+  q31_t _CoeffsQ31[FILTERSIZE];
+} filterType32;
 
 class AudioI2S_SCK
 {
@@ -12,22 +22,31 @@ public:
   AudioI2S_SCK(uint32_t fftSize); //
   virtual ~AudioI2S_SCK(); //
 
-  int Configure(int bitsPerSample,int channels, int bufferSize, int sampleRate);
+  int ConfigureFFT(int bitsPerSample,int channels, int bufferSize, int sampleRate);
+  int ConfigureFilter(int bitsPerSample,int channels, int bufferSize, int sampleRate);
   double AudioSpectrumRead(int spectrum[], int Aspectrum [], int spectrumDB[], int AspectrumDB[], int fftSize);
+  double AudioTimeFilter();
   double AudioRMSRead_dB();
   void SerialPrint(String ToPrint, int PrioFac, bool NewLine);//
   int available();
 
 protected:
-  virtual void GetBuffer();
+  virtual void GetBuffer(bool windowed);
   virtual void Window();
   virtual void FFT();
   virtual void A_WEIGHTING();
-  virtual double RMSG(void *inputBuffer, int inputSize, int typeRMS);
+  virtual double RMSG(void *inputBuffer, int inputSize, int typeRMS, int factor);
   virtual void UpScaling(void *vector, int vectorSize, int factor);
   virtual void DownScaling(void *vector, int vectorSize, int factor);
   virtual void EQUALIZING();
   virtual void Convert2DB(void *vectorSource, void *vectorDest, int vectorSize);
+
+  virtual filterType32 *FilterCreate( void );
+  virtual void FilterReset(filterType32 * pThis);
+  virtual void FilterDestroy(filterType32 *pObject);
+  virtual void FilterInit(filterType32 * pThis);  
+  virtual int FilterConv(filterType32 * pThis, q31_t * pInput, q31_t * pOutput, unsigned int count );
+  virtual int FilterInChunks(filterType32 * pThis, void * pInput, void * pOutput, int length);
 
 private:
   //BUFFER Sizes
@@ -44,6 +63,8 @@ private:
   double _rms_timeDB;
   double _rms_specBDB;
   double _rms_AspecBDB;
+  double _rmsFilterA;
+  double _rmsFilterADB;
   //BUFFERS
   void* _sampleBuffer;
   void* _sampleBufferWin;
@@ -53,12 +74,14 @@ private:
   void* _fftBufferDB;
   void* _spectrumBufferDB;
   void* _AspectrumBufferDB;
+  void* _sampleBufferFilt; //OUTFILTERSIZE?
+  void* _sampleBufferFiltF32;
+    
   //EXTRAS
   int _SpectrumAvailable;
   int _RMSAvailable;
   int _bufferAvailable;
   int _available;
-
-  arm_rfft_instance_q15 _S15;
+  //FFT
   arm_rfft_instance_q31 _S31;
 };
