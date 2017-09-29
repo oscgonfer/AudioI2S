@@ -16,14 +16,16 @@ typedef struct
   q31_t _CoeffsQ31[FILTERSIZE];
 } filterType32;
 
+//CLASS
 class AudioI2S_SCK
 {
 public:
   AudioI2S_SCK(uint32_t fftSize); //
   virtual ~AudioI2S_SCK(); //
 
-  int ConfigureFFT(int bitsPerSample,int channels, int bufferSize, int sampleRate);
+  int ConfigureFFT(int bitsPerSample,int channels, int bufferSize, int sampleRate, bool SpectrumDBOutput);
   int ConfigureFilter(int bitsPerSample,int channels, int bufferSize, int sampleRate);
+  double AudioSpectrumRead(int fftSize);
   double AudioSpectrumRead(int spectrum[], int Aspectrum [], int spectrumDB[], int AspectrumDB[], int fftSize);
   double AudioTimeFilter();
   double AudioRMSRead_dB();
@@ -31,14 +33,13 @@ public:
   int available();
 
 protected:
-  virtual void GetBuffer(bool windowed);
+  virtual void GetBuffer();
   virtual void Window();
-  virtual void FFT();
-  virtual void A_WEIGHTING();
+  virtual void FFT(void *inputBuffer, void* outputBuffer, int fftBufferSize);
+  virtual void A_WEIGHTING(void *inputBuffer, void* outputBuffer, int inputSize);
   virtual double RMSG(void *inputBuffer, int inputSize, int typeRMS, int factor);
-  virtual void UpScaling(void *vector, int vectorSize, int factor);
-  virtual void DownScaling(void *vector, int vectorSize, int factor);
-  virtual void EQUALIZING();
+  virtual void Scaling(void *vector, int vectorSize, double factor, bool multDiv);
+  virtual void EQUALIZING(void *inputBuffer, int inputSize);
   virtual void Convert2DB(void *vectorSource, void *vectorDest, int vectorSize);
 
   virtual filterType32 *FilterCreate( void );
@@ -56,6 +57,7 @@ private:
   int _bitsPerSample;
   int _channels;
   int _sampleRate;
+  bool _SpectrumDBOutput;
   //RMS Results
   double _rms_time;
   double _rms_specB;
@@ -68,15 +70,14 @@ private:
   //BUFFERS
   void* _sampleBuffer;
   void* _sampleBufferWin;
-  void* _fftBuffer;
-  void* _spectrumBuffer;
-  void* _AspectrumBuffer;
-  void* _fftBufferDB;
-  void* _spectrumBufferDB;
-  void* _AspectrumBufferDB;
-  void* _sampleBufferFilt; //OUTFILTERSIZE?
-  void* _sampleBufferFiltF32;
-    
+    //FFT
+    void* _fftBuffer;
+    void* _spectrumBuffer;
+    void* _AspectrumBuffer;
+    void* _spectrumBufferDB;
+    void* _AspectrumBufferDB;
+    //FILTER
+    void* _sampleBufferFilt;    
   //EXTRAS
   int _SpectrumAvailable;
   int _RMSAvailable;

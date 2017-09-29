@@ -17,66 +17,60 @@ double rms_specBDB = 0;
 double rms_AspecBDB = 0;
 double rms_FilterADB = 0;
 
+bool SpectrumDBOutput = false;
+
 ///// DEFINE OBJECT
 AudioI2S_SCK AudioI2S_SCK(fftSize);
 
 void setup() {
-	// Open serial communications and wait for port to open:
+	// Open serial communications
 	Serial.begin(115200);
-
- 	// configure the I2S input as the input for the FFT analyzer
-	if (!AudioI2S_SCK.ConfigureFilter(bitsPerSample, channels, bufferSize, sampleRate)){
-		Serial.println("Failed to init the Audio!");
-		while (1); // do nothing
-	}
-
-  Serial.println("Init Audio OK");
+ 	// Configure the I2S input as the input for the FFT analyzer
+  AudioI2S_SCK.ConfigureFFT(bitsPerSample, channels, bufferSize, sampleRate, SpectrumDBOutput);
+	//AudioI2S_SCK.ConfigureFilter(bitsPerSample, channels, bufferSize, sampleRate);
 }
 
 uint32_t FreeRamMem() {
     uint32_t stackTop;
     uint32_t heapTop;
 
-    // current position of the stack.
+    // Current position of the stack
     stackTop = (uint32_t) &stackTop;
 
-    // current position of heap.
+    // Current position of heap
     void* hTop = malloc(1);
     heapTop = (uint32_t) hTop;
     free(hTop);
 
-    // The difference is the free, available ram.
+    // The difference is the free, available ram
     return stackTop - heapTop;
 }
 
 void loop() {
 	if (AudioI2S_SCK.available()){
-		//rms_AspecBDB = AudioI2S_SCK.AudioSpectrumRead(spectrum, Aspectrum, spectrumDB, AspectrumDB, fftSize);
- 		//rms_specBDB = AudioI2S_SCK.AudioRMSRead_dB();
-    rms_FilterADB = AudioI2S_SCK.AudioTimeFilter();
+		rms_AspecBDB = AudioI2S_SCK.AudioSpectrumRead(spectrum, Aspectrum, spectrumDB, AspectrumDB, fftSize);
+ 		rms_specBDB = AudioI2S_SCK.AudioRMSRead_dB();
+    //rms_FilterADB = AudioI2S_SCK.AudioTimeFilter();
 
     /*
-    Serial.println("Buffer Results (arduino)");
-    
+    Serial.println("Buffer Results (arduino)");    
 		for (int i = 0; i < fftSize/2; i++) {
-      	Serial.print((i * sampleRate) / fftSize);
-     		Serial.print("\t");
-      	Serial.print(spectrum[i]);
-      	Serial.print("\t");
-      	Serial.print(Aspectrum[i]);
-      	Serial.print("\t");
-      	Serial.print(spectrumDB[i]);
-    		Serial.print("\t");
-    		Serial.println(AspectrumDB[i]);
-    	}
+      Serial.print((i * sampleRate) / fftSize);
+     	Serial.print("\t");
+     	Serial.print(spectrum[i]);
+    	Serial.print("\t");
+    	Serial.print(Aspectrum[i]);
+    	Serial.print("\t");
+    	Serial.print(spectrumDB[i]);
+  		Serial.print("\t");
+  		Serial.println(AspectrumDB[i]);
+    }
     */
     Serial.println("*******");
     
-    //Serial.println("rms_specBDB\t" + String(rms_specBDB));
-    //Serial.println("rms_AspecBDB\t" + String(rms_AspecBDB));
-    
-
-    Serial.println("rms_FilterADB\t" + String(rms_FilterADB));
+    Serial.println("rms_specBDB\t" + String(rms_specBDB));
+    Serial.println("rms_AspecBDB\t" + String(rms_AspecBDB));
+    //Serial.println("rms_FilterADB\t" + String(rms_FilterADB));
     
     Serial.println("*******");
     

@@ -20,7 +20,7 @@ const int BIT_LENGTH = 24;
 const int FULL_SCALE_DBSPL = 120; // FULL SCALE dBSPL (AOP = 116dB SPL)
 const double FULL_SCALE_DBFS = 20*log10(pow(2,(BIT_LENGTH)));
 const double RMS_HANN = 0.61177;
-const int CONST_FACTOR = 64;
+const int CONST_FACTOR = 32;
 
 ///// WEIGHTING TABLES
 
@@ -45,5 +45,5 @@ const double HANN[] = HANN_WINDOW_512;
 //Table 512 bufferSize
 const double EQUALTAB[] = EQUALIZER_256;
 
-///// DEBUGING
+///// DEBUGING SERIALPRINT FUNCTION
 const int PRIORITY = 5;
