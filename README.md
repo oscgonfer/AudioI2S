@@ -1,10 +1,12 @@
-# AudioI2S_SCK
+# AudioAnalysis
 
-Audio treatment of a I2S MEMs microphone for SCK
+Audio treatment of a I2S MEMs microphone for the Smart Citizen Kit 2.0
 
 This library performs the audio analysis on a SAMD21 processor of a MEMS I2S microphone output.
 
 # Features:
+
+FFT Analysis
 
 1. Signal downscaling
 2. Signal windowing through hann method
@@ -13,6 +15,12 @@ This library performs the audio analysis on a SAMD21 processor of a MEMS I2S mic
 5. Spectrum equalisation
 6. RMS calculation
 7. dB scale convertion
+
+FIR Filtering
+
+1. Signal downscaling
+2. Signal filtering (by chunks) with arm_fir custom filter including equalisation and a-weighting
+3. RMS calculation
 
 With references to
  * IoT_noise by Andre Filliettaz, 2016 https://github.com/andrentaz/iot-noise/tree/4eed813a5d868e7a4ff47a5fa0936d3415a5737d

@@ -1,4 +1,4 @@
-#include <AudioI2S_SCK.h>
+#include <AudioAnalysis.h>
 
 ///// FFT Parameters
 const uint32_t fftSize = 512;
@@ -20,37 +20,20 @@ double rms_FilterADB = 0;
 bool SpectrumDBOutput = false;
 
 ///// DEFINE OBJECT
-AudioI2S_SCK AudioI2S_SCK(fftSize);
+AudioAnalysis AudioAnalysis(sampleRate, bufferSize, channels, bitsPerSample);
 
 void setup() {
 	// Open serial communications
 	Serial.begin(115200);
- 	// Configure the I2S input as the input for the FFT analyzer
-  AudioI2S_SCK.ConfigureFFT(bitsPerSample, channels, bufferSize, sampleRate, SpectrumDBOutput);
-	//AudioI2S_SCK.ConfigureFilter(bitsPerSample, channels, bufferSize, sampleRate);
-}
-
-uint32_t FreeRamMem() {
-    uint32_t stackTop;
-    uint32_t heapTop;
-
-    // Current position of the stack
-    stackTop = (uint32_t) &stackTop;
-
-    // Current position of heap
-    void* hTop = malloc(1);
-    heapTop = (uint32_t) hTop;
-    free(hTop);
-
-    // The difference is the free, available ram
-    return stackTop - heapTop;
+ 	// Configure Analysis
+    AudioAnalysis.SetAnalysis(FFTAnalysis);
 }
 
 void loop() {
-	if (AudioI2S_SCK.available()){
-		rms_AspecBDB = AudioI2S_SCK.AudioSpectrumRead(spectrum, Aspectrum, spectrumDB, AspectrumDB, fftSize);
- 		rms_specBDB = AudioI2S_SCK.AudioRMSRead_dB();
-    //rms_FilterADB = AudioI2S_SCK.AudioTimeFilter();
+	if (AudioAnalysis.available()){
+		rms_AspecBDB = AudioAnalysis.AudioSpectrumRead(spectrum, Aspectrum, spectrumDB, AspectrumDB, fftSize);
+ 		rms_specBDB = AudioAnalysis.AudioRMSRead_dB();
+    //rms_FilterADB = AudioAnalysis.AudioTimeFilter();
 
     /*
     Serial.println("Buffer Results (arduino)");    
@@ -76,4 +59,20 @@ void loop() {
     
     Serial.println("FreeRamMem\t" + String(FreeRamMem()));
 	}
+}
+
+uint32_t FreeRamMem() {
+    uint32_t stackTop;
+    uint32_t heapTop;
+
+    // Current position of the stack
+    stackTop = (uint32_t) &stackTop;
+
+    // Current position of heap
+    void* hTop = malloc(1);
+    heapTop = (uint32_t) hTop;
+    free(hTop);
+
+    // The difference is the free, available ram
+    return stackTop - heapTop;
 }
