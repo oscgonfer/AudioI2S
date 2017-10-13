@@ -1,4 +1,15 @@
+#ifndef _FIR_ANALYSER_H_INCLUDED
+#define _FIR_ANALYSER_H_INCLUDED
 
+#include <Arduino.h>
+
+#define ARM_MATH_CM0PLUS
+#include <arm_math.h>
+#define __FPU_PRESENT 0
+
+#include <AudioInI2S.h>
+
+#include "AudioAnalyser.h"
 #include "ConstantsSound.h"
 #include "fir_coeffs.h"
 
@@ -11,18 +22,20 @@ typedef struct
 } filterType32;
 
 //CLASS
-class FIRAanalysis
+class FIRAnalysis : public AudioAnalyser
 {
 public:
-  FIRAanalysis(uint32_t fftSize); //
-  virtual ~FIRAanalysis(); //
+  FIRAnalysis(uint32_t bufferSize); //
+  virtual ~FIRAnalysis(); //
 
-  int ConfigureFilter(int bitsPerSample,int channels, int bufferSize, int sampleRate);
-  double AudioTimeFilter();
+  double FIRRMSRead_dB();
   void SerialPrint(String ToPrint, int PrioFac, bool NewLine);//
-  int available();
+  int Available();
 
 protected:
+  virtual int Configure(AudioIn* input);
+  virtual void Update(const void* buffer, size_t bufferSize);
+
   virtual filterType32 *FilterCreate( void );
   virtual void FilterReset(filterType32 * pThis);
   virtual void FilterDestroy(filterType32 *pObject);
@@ -37,32 +50,14 @@ private:
   int _bitsPerSample;
   int _channels;
   int _sampleRate;
-  bool _SpectrumDBOutput;
   //RMS Results
-  double _rms_time;
-  double _rms_specB;
-  double _rms_AspecB;
-  double _rms_timeDB;
-  double _rms_specBDB;
-  double _rms_AspecBDB;
   double _rmsFilterA;
   double _rmsFilterADB;
   //BUFFERS
   void* _sampleBuffer;
-  void* _sampleBufferWin;
-    //FFT
-    void* _fftBuffer;
-    void* _spectrumBuffer;
-    void* _AspectrumBuffer;
-    void* _spectrumBufferDB;
-    void* _AspectrumBufferDB;
     //FILTER
     void* _sampleBufferFilt;    
-  //EXTRAS
-  int _SpectrumAvailable;
-  int _RMSAvailable;
-  int _bufferAvailable;
-  int _available;
-  //FFT
-  arm_rfft_instance_q31 _S31;
+  int _FIRAvailable;
 };
+
+#endif

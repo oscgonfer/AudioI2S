@@ -1,6 +1,7 @@
-#include "FFTAnalysis.h"
+#include "FFTAnalyser.h"
+#include "AudioIn.h"
 
-FFTAnalysis::FFTAnalysis(uint32_t fftSize) :
+FFTAnalyser::FFTAnalyser(int fftSize, bool SpectrumDBOutput) :
   //BUFFER Sizes
   _fftSize(fftSize),
   //BUFFERs
@@ -9,26 +10,23 @@ FFTAnalysis::FFTAnalysis(uint32_t fftSize) :
   _AspectrumBuffer(NULL),
   _spectrumBufferDB(NULL),
   _AspectrumBufferDB(NULL),
-  _sampleBufferFilt(NULL),
   //RMS
   _rms_specB(0),
   _rms_AspecB(0),
   _rms_specBDB(0),
   _rms_AspecBDB(0),
   //EXTRAS
-  _SpectrumAvailable(1),
+  _SpectrumAvailable(0),
   _bitsPerSample(0),
   _channels(0),
   _bufferSize(0),
   _sampleRate(0),
-  _bufferAvailable(1),
-  _available(1),
-  _SpectrumDBOutput(false)
+  _SpectrumDBOutput(SpectrumDBOutput)
 {
 }
 
-FFTAnalysis::~FFTAnalysis(){
-
+FFTAnalyser::~FFTAnalyser()
+{
   if (_fftBuffer) {
     free(_fftBuffer);
   }
@@ -50,22 +48,42 @@ FFTAnalysis::~FFTAnalysis(){
   }
 }
 
-int FFTAnalysis::ConfigureFFT(int bitsPerSample,int channels, int bufferSize, int sampleRate, bool SpectrumDBOutput){
+int FFTAnalyser::Available(){
+  return _SpectrumAvailable;
+}
 
-    _bitsPerSample = bitsPerSample;
-    _channels = channels;
-    _bufferSize = bufferSize;
-    _sampleRate = sampleRate;
-    _SpectrumDBOutput = SpectrumDBOutput;
+double FFTAnalyser::AudioSpectrumRead(int spectrum[], int Aspectrum [],int spectrumDB[], int AspectrumDB[]){
+  
+  if (!_SpectrumAvailable) {
+    return 0;
+  }
 
-    //General fool-proof checks
-    if (_bitsPerSample != 32) {
-      return 0;
-    }
+  // COPY SPECTRUMS TO MAIN
+  memcpy(spectrum, _spectrumBuffer, sizeof(int) * _fftSize/2);
+  memcpy(Aspectrum, _AspectrumBuffer, sizeof(int) * _fftSize/2);
 
-    if (_channels != 1 && _channels != 2) {
-      return 0;
-    }
+  if (_SpectrumDBOutput){
+    // CONVERT 2 DB THE BUFFERS
+    Convert2DB(_spectrumBuffer, _spectrumBufferDB, _fftSize/2);
+    Convert2DB(_AspectrumBuffer, _AspectrumBufferDB, _fftSize/2);
+    // COPY SPECTRUMS TO MAIN
+    memcpy(spectrumDB, _spectrumBufferDB, sizeof(int) * _fftSize/2);
+    memcpy(AspectrumDB, _AspectrumBufferDB, sizeof(int) * _fftSize/2);
+  }
+
+  _SpectrumAvailable = 0;
+
+  return _rms_AspecBDB; 
+}
+
+double FFTAnalyser::AudioRMSRead_dB(){
+  return _rms_specBDB;
+}
+
+int FFTAnalyser::Configure(AudioIn* input){
+
+    _bitsPerSample = input->bitsPerSample();
+    _channels = input->channels();
 
     //Initialize fft
     if (ARM_MATH_SUCCESS != arm_rfft_init_q31(&_S31, _fftSize, 0, 1)) {
@@ -74,6 +92,7 @@ int FFTAnalysis::ConfigureFFT(int bitsPerSample,int channels, int bufferSize, in
 
     //Allocate memory for buffers
       //Allocate time buffer
+      _bufferSize = _fftSize; //ONLY because the ARM_FFT function works
       _sampleBuffer = calloc(_bufferSize, sizeof(q31_t));
       _sampleBufferWin = calloc(_bufferSize, sizeof(q31_t));
       _fftBuffer = calloc(_fftSize, sizeof(q31_t));
@@ -81,7 +100,7 @@ int FFTAnalysis::ConfigureFFT(int bitsPerSample,int channels, int bufferSize, in
       _spectrumBuffer = calloc(_fftSize/2, sizeof(q31_t));
       _AspectrumBuffer = calloc(_fftSize/2,sizeof(q31_t));
 
-      if (SpectrumDBOutput){
+      if (_SpectrumDBOutput){
         //Allocate frecuency dB buffers
         _spectrumBufferDB = calloc(_fftSize/2, sizeof(q31_t));
         _AspectrumBufferDB = calloc(_fftSize/2,sizeof(q31_t));
@@ -89,11 +108,16 @@ int FFTAnalysis::ConfigureFFT(int bitsPerSample,int channels, int bufferSize, in
       
 
     //Free all buffers in case of bad allocation
-    if (_sampleBuffer == NULL || _spectrumBuffer == NULL || _AspectrumBuffer == NULL) {
+    if (_sampleBuffer == NULL || _sampleBufferWin == NULL || _spectrumBuffer == NULL || _AspectrumBuffer == NULL) {
 
       if (_sampleBuffer) {
         free(_sampleBuffer);
         _sampleBuffer = NULL;
+      }
+
+      if (_sampleBufferWin) {
+        free(_sampleBufferWin);
+        _sampleBufferWin = NULL;
       }
 
       if (_spectrumBuffer) {
@@ -105,7 +129,7 @@ int FFTAnalysis::ConfigureFFT(int bitsPerSample,int channels, int bufferSize, in
         free(_AspectrumBuffer);
         _AspectrumBuffer = NULL;
       }
-      if (SpectrumDBOutput){
+      if (_SpectrumDBOutput){
         if (_spectrumBufferDB) {
           free(_spectrumBufferDB);
           _spectrumBufferDB = NULL;
@@ -121,14 +145,23 @@ int FFTAnalysis::ConfigureFFT(int bitsPerSample,int channels, int bufferSize, in
     return 1;
 }
 
-double AudioAnalysis::AudioSpectrumRead(int fftSize){
-  if (!_SpectrumAvailable) {
-    return 0;
+void FFTAnalyser::Update(const void*buffer, size_t bufferUpdateSize){
+
+  uint8_t* newSamples = ((uint8_t*)_sampleBuffer);
+  int samples = bufferUpdateSize / (_bitsPerSample / 8);
+
+  const int32_t *src = (const int32_t*)buffer;
+  int32_t* dst = (int32_t*)newSamples;
+
+  for (int i = 0; i < samples; i += 2) {
+    *dst = *src / 2;
+    src++;
+    *dst += *src / 2;
+    *dst/=64; //CORRECT THE BIT NUMBER
+    src++;
+    dst++;
   }
-
-  // Get buffer (currently hardcoded)
-  GetBuffer();
-
+  
   // Downscale the sample buffer for proper functioning
   Scaling(_sampleBuffer, _bufferSize, CONST_FACTOR, false);
 
@@ -139,101 +172,37 @@ double AudioAnalysis::AudioSpectrumRead(int fftSize){
   FFT(_sampleBufferWin, _spectrumBuffer, _fftSize);
   EQUALIZING(_spectrumBuffer, _fftSize/2);
   A_WEIGHTING(_spectrumBuffer, _AspectrumBuffer, _fftSize/2);
-
-  // RMS CALCULATION  
-  _rms_specB = RMSG(_spectrumBuffer, _fftSize/2, 2, CONST_FACTOR); 
-  _rms_AspecB = RMSG(_AspectrumBuffer, _fftSize/2, 2, CONST_FACTOR); 
-
-  free(_spectrumBuffer);
-  free(_AspectrumBuffer);
-  
-  _rms_specBDB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2)*_rms_specB)); 
-  _rms_AspecBDB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2)*_rms_AspecB)); 
-  
-  // Set available to 0 to wait for new process
-  _SpectrumAvailable = 0;
-
-  return _rms_AspecBDB; 
-}
-
-double AudioAnalysis::AudioSpectrumRead(int spectrum[], int Aspectrum [],int spectrumDB[], int AspectrumDB[], int fftSize){
-  
-  if (!_SpectrumAvailable) {
-    return 0;
-  }
-
-  // Get buffer (currently hardcoded)
-  GetBuffer();
-  
-  // Downscale the sample buffer for proper functioning
-  Scaling(_sampleBuffer, _bufferSize, CONST_FACTOR, false);
-
-  // Apply Hann Window
-  Window();
-  
-  // FFT - EQUALIZATION and A-WEIGHTING
-  int _time_before_FFT = millis();
-  FFT(_sampleBufferWin, _spectrumBuffer, _fftSize);
-  EQUALIZING(_spectrumBuffer, _fftSize/2);
-  A_WEIGHTING(_spectrumBuffer, _AspectrumBuffer, _fftSize/2);
-  int _time_after_FFT = millis();
-  int _time_delta_FFT = _time_after_FFT-_time_before_FFT;
-  SerialPrint("FFT Time: \t" + String(_time_delta_FFT),6,true);
-
-  /*
-  time_delta_Down :   14
-  time_delta_FIR :  173
-  time_delta_RMS :  4
-  */
 
   q31_t* printW = (q31_t*)_spectrumBuffer;
   q31_t* printWA = (q31_t*)_AspectrumBuffer;
 
+  /*
   //Apply hann window in time-domain
   for (int i = 0; i < _fftSize/2; i ++) {
     SerialPrint(String(i)+"\t"+String(*printW) +"\t"+String(*printWA), 6, true);
     printW++;
     printWA++;
-  }
+  }*/
 
   // RMS CALCULATION  
-  int _time_before_RMS = millis();
   _rms_specB = RMSG(_spectrumBuffer, _fftSize/2, 2, CONST_FACTOR); 
   _rms_AspecB = RMSG(_AspectrumBuffer, _fftSize/2, 2, CONST_FACTOR); 
   
   _rms_specBDB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2)*_rms_specB)); 
   _rms_AspecBDB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2)*_rms_AspecB)); 
-  int _time_after_RMS = millis();
-  int time_delta_RMS = _time_after_RMS-_time_before_RMS;
  
   // UPSCALING THE BUFFERS
   Scaling(_sampleBuffer,_bufferSize,CONST_FACTOR,true);
-  Scaling(_spectrumBuffer,fftSize/2,CONST_FACTOR,true);
-  Scaling(_AspectrumBuffer,fftSize/2,CONST_FACTOR,true);
+  Scaling(_spectrumBuffer,_fftSize/2,CONST_FACTOR,true);
+  Scaling(_AspectrumBuffer,_fftSize/2,CONST_FACTOR,true);
 
-  // COPY SPECTRUMS TO MAIN
-  memcpy(spectrum, _spectrumBuffer, sizeof(int) * _fftSize/2);
-  memcpy(Aspectrum, _AspectrumBuffer, sizeof(int) * _fftSize/2);
-
-  if (_SpectrumDBOutput){
-    // CONVERT 2 DB THE BUFFERS
-    Convert2DB(_spectrumBuffer, _spectrumBufferDB, _fftSize/2);
-    Convert2DB(_AspectrumBuffer, _AspectrumBufferDB, _fftSize/2);
-    // COPY SPECTRUMS TO MAIN
-    memcpy(spectrumDB, _spectrumBufferDB, sizeof(int) * _fftSize/2);
-    memcpy(AspectrumDB, _AspectrumBufferDB, sizeof(int) * _fftSize/2);
-  }
   // Set available to 0 to wait for new process
-  _SpectrumAvailable = 0;
+  _SpectrumAvailable = 1;
 
-  return _rms_AspecBDB; 
+  interrupts();
 }
 
-double AudioAnalysis::AudioRMSRead_dB(){
-  return _rms_specBDB;
-}
-
-void FFTAnalysis::FFT(void *_inputBuffer, void* _outputBuffer, int _fftBufferSize){
+void FFTAnalyser::FFT(void *_inputBuffer, void* _outputBuffer, int _fftBufferSize){
   //_sampleBufferWin is already treated for FFT (usable samples, averaged, windowed)
 
   // Calculate FFTBuffer ((r-i,r-i...))
@@ -258,11 +227,22 @@ void FFTAnalysis::FFT(void *_inputBuffer, void* _outputBuffer, int _fftBufferSiz
     _pfftBuffer++;
     _pspectrumBuffer++;
   }
-
 }
 
+void FFTAnalyser::Window(){
+  const q31_t* srcW = (const q31_t*)_sampleBuffer;
+  q31_t* dstW = (q31_t*)_sampleBufferWin;
 
-void FFTAnalysis::EQUALIZING(void *inputBuffer, int inputSize){
+  //Apply hann window in time-domain
+  for (int i = 0; i < _bufferSize; i ++) {
+    double window = HANN[i];
+    *dstW = (*srcW) * window;
+    dstW++;
+    srcW++;
+  }
+}
+
+void FFTAnalyser::EQUALIZING(void *inputBuffer, int inputSize){
   q31_t* spBE = (q31_t*)inputBuffer;
 
   for (int i = 0; i < inputSize; i ++) {
@@ -273,7 +253,7 @@ void FFTAnalysis::EQUALIZING(void *inputBuffer, int inputSize){
   }
 }
 
-void FFTAnalysis::A_WEIGHTING(void *inputBuffer, void *outputBuffer, int inputSize){
+void FFTAnalyser::A_WEIGHTING(void *inputBuffer, void *outputBuffer, int inputSize){
   //Apply a-weighting to spectrumBuffer
   const q31_t* spBA = (const q31_t*)inputBuffer;
   q31_t* AspBA = (q31_t*)outputBuffer;
@@ -287,7 +267,7 @@ void FFTAnalysis::A_WEIGHTING(void *inputBuffer, void *outputBuffer, int inputSi
   }
 }
 
-void AudioAnalysis::SerialPrint(String ToPrint, int PrioFac, bool NewLine){
+void FFTAnalyser::SerialPrint(String ToPrint, int PrioFac, bool NewLine){
   // ONLY FOR PRINTING
   if (PrioFac-PRIORITY>0) {
       if (!NewLine) {

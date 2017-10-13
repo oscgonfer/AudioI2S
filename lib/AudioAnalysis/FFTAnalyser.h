@@ -1,26 +1,37 @@
-#include "AudioAnalysis.h"
+#ifndef _FFT_ANALYSER_H_INCLUDED
+#define _FFT_ANALYSER_H_INCLUDED
+
+#include <Arduino.h>
+
+#define ARM_MATH_CM0PLUS
+#include <arm_math.h>
+
+#include <AudioInI2S.h>
+
+#include "AudioAnalyser.h"
 #include "ConstantsSound.h"
 
 //CLASS
-class FFTAnalysis
+class FFTAnalyser : public AudioAnalyser
 {
 public:
-  FFTAnalysis(uint32_t fftSize); //
-  virtual ~FFTAnalysis(); //
+  FFTAnalyser(int fftSize, bool SpectrumDBOutput); //
+  virtual ~FFTAnalyser(); //
 
-  int ConfigureFFT(int bitsPerSample,int channels, int bufferSize, int sampleRate, bool SpectrumDBOutput);
-  double AudioSpectrumRead(int fftSize);
-  double AudioSpectrumRead(int spectrum[], int Aspectrum [], int spectrumDB[], int AspectrumDB[], int fftSize);
+  //int Configure(int bufferSize, bool SpectrumDBOutput);
+  double AudioSpectrumRead(int spectrum[], int Aspectrum [], int spectrumDB[], int AspectrumDB[]);
   double AudioRMSRead_dB();
   void SerialPrint(String ToPrint, int PrioFac, bool NewLine);//
-  int available();
+  int Available();
 
 protected:
-  virtual void GetBuffer();
+  virtual int Configure(AudioIn* input);
+  virtual void Update(const void* buffer, size_t bufferReadSize);
+
   virtual void Window();
   virtual void FFT(void *inputBuffer, void* outputBuffer, int fftBufferSize);
+  virtual void EQUALIZING(void *inputBuffer, int inputSize);
   virtual void A_WEIGHTING(void *inputBuffer, void* outputBuffer, int inputSize);
-  virtual double RMSG(void *inputBuffer, int inputSize, int typeRMS, int factor);
 
 private:
   //BUFFER Sizes
@@ -55,3 +66,5 @@ private:
   //FFT
   arm_rfft_instance_q31 _S31;
 };
+
+#endif

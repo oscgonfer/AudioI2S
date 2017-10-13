@@ -1,24 +1,11 @@
-#include "AudioAnalysis.h"
+#include "AudioAnalyser.h"
 
-AudioAnalysis::AudioAnalysis(int sampleRate, int bufferSize, int channels, int bitsPerSample) :
-  //BUFFER Sizes
-  _AnalysisType(0),
-  _bufferSize(bufferSize), //Already usable buffersize
-  _bitsPerSample(bitsPerSample),
-  _sampleRate(sampleRate),
-  _channels(channels)
+int AudioAnalyser::input(AudioIn& input)
 {
+  return input.setAnalyser(this);
 }
 
-AudioAnalysis::~AudioAnalysis(){
-
-}
-
-void AudioAnalysis::GetBuffer(){
-
-}
-
-void AudioAnalysis::Scaling(void *vector, int vectorSize, double factor, bool multDiv){
+void AudioAnalyser::Scaling(void *vector, int vectorSize, double factor, bool multDiv){
     // SCALE signal by factor
     q31_t* _vectDW = (q31_t*) vector;
     for (int i = 0; i<vectorSize;i++){
@@ -32,7 +19,7 @@ void AudioAnalysis::Scaling(void *vector, int vectorSize, double factor, bool mu
     }
 }
 
-double AudioAnalysis::RMSG(void *inputBuffer, int inputSize, int typeRMS, int FACTOR){ 
+double AudioAnalyser::RMSG(void *inputBuffer, int inputSize, int typeRMS, int FACTOR){ 
   //typeRMS = 1 if time domain -- typeRMS = 2 if spectrum domain
   double _rmsOut = 0;
   const q31_t* _pBuffer = (const q31_t*) inputBuffer; 
@@ -59,7 +46,7 @@ double AudioAnalysis::RMSG(void *inputBuffer, int inputSize, int typeRMS, int FA
   //_RMSAvailable = 1;  
 } 
 
-void AudioAnalysis::Convert2DB(void *vectorSource, void *vectorDest, int vectorSize){
+void AudioAnalyser::Convert2DB(void *vectorSource, void *vectorDest, int vectorSize){
 
     q31_t* _vectDB = (q31_t*) vectorDest;
     const q31_t* _vect = (const q31_t*) vectorSource;
@@ -76,7 +63,7 @@ void AudioAnalysis::Convert2DB(void *vectorSource, void *vectorDest, int vectorS
     //_SpectrumAvailable = 1;
 }
 
-void AudioAnalysis::SerialPrint(String ToPrint, int PrioFac, bool NewLine){
+void AudioAnalyser::SerialPrint(String ToPrint, int PrioFac, bool NewLine){
   // ONLY FOR PRINTING
   if (PrioFac-PRIORITY>0) {
       if (!NewLine) {
