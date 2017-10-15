@@ -87,6 +87,7 @@ void FIRAnalysis::Update(const void* buffer, size_t bufferUpdateSize){
     *dst = *src / 2;
     src++;
     *dst += *src / 2;
+    *dst/=64; //CORRECT THE BIT NUMBER
     src++;
     dst++;
   }
@@ -103,8 +104,8 @@ void FIRAnalysis::Update(const void* buffer, size_t bufferUpdateSize){
   _rmsFilterADB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2)*_rmsFilterA)); 
 
   FilterDestroy(filter);
-  free(_sampleBuffer);
-  free(_sampleBufferFilt);
+  //free(_sampleBuffer);
+  //free(_sampleBufferFilt);
 
   // Set available to 0 to wait for new process 
   _FIRAvailable = 1; 
@@ -147,19 +148,18 @@ int FIRAnalysis::FilterConv(filterType32 * pThis, q31_t* pInputChunk, q31_t* pOu
 
 filterType32 *FIRAnalysis::FilterCreate(void){
   filterType32 *result = (filterType32 *)malloc( sizeof(filterType32) ); // Allocate memory for the object
-  FilterInit(result);                     // Initialize it
-  return result;                                // Return the result
+  FilterInit(result); // Initialize it
+  return result; // Return the result
 }
 
 void FIRAnalysis::FilterInit(filterType32 * pThis){
   arm_float_to_q31(firCoeffs, pThis->_CoeffsQ31, FILTERSIZE);
   arm_fir_init_q31(&pThis->_Q31, FILTERSIZE, pThis->_CoeffsQ31, pThis->_FstateQ31, FILTERBLOCKSIZE);
-  FilterReset( pThis );
+  FilterReset(pThis);
 }
 
 void FIRAnalysis::FilterDestroy(filterType32 *pObject){
   free(pObject);
-  free(_sampleBufferFilt);
 }
 
 void FIRAnalysis::FilterReset(filterType32 * pThis) {

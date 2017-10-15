@@ -22,8 +22,7 @@
 AudioInI2SClass::AudioInI2SClass() :
   _sampleRate(-1),
   _bitsPerSample(-1),
-  _callbackTriggered(true),
-  _bufferReadSize(0)
+  _callbackTriggered(true)
 {
 }
 
@@ -31,7 +30,7 @@ AudioInI2SClass::~AudioInI2SClass()
 {
 }
 
-int AudioInI2SClass::begin(long sampleRate, int bitsPerSample, int bufferReadSize)
+int AudioInI2SClass::begin(long sampleRate, int bitsPerSample)
 {
   if (!I2S_SCK.begin(I2S_PHILIPS_MODE, sampleRate, bitsPerSample)) {
     return 0;
@@ -39,13 +38,12 @@ int AudioInI2SClass::begin(long sampleRate, int bitsPerSample, int bufferReadSiz
 
   _sampleRate = sampleRate;
   _bitsPerSample = bitsPerSample;
-  _bufferReadSize = bufferReadSize;
 
   // add the receiver callback
   I2S_SCK.onReceive(AudioInI2SClass::onI2SReceive);
   _datasize = datasize();
 
-  // trigger a read to kick things off
+  // Trigger a read to kick things off
   I2S_SCK.read();
 
   return 1;
@@ -107,15 +105,13 @@ int AudioInI2SClass::reset()
 void AudioInI2SClass::onReceive()
 {
   if (_callbackTriggered) {
-    uint8_t data[_bufferReadSize];
-
+    uint8_t data[_datasize];
     read(data, sizeof(data));
   }
 }
 
 void AudioInI2SClass::onI2SReceive()
 {
-  noInterrupts();
   AudioInI2S.onReceive();
 }
 

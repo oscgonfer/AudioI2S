@@ -42,8 +42,6 @@ double AudioAnalyser::RMSG(void *inputBuffer, int inputSize, int typeRMS, int FA
   }
   
   return _rmsOut;
- 
-  //_RMSAvailable = 1;  
 } 
 
 void AudioAnalyser::Convert2DB(void *vectorSource, void *vectorDest, int vectorSize){
@@ -60,7 +58,6 @@ void AudioAnalyser::Convert2DB(void *vectorSource, void *vectorDest, int vectorS
       _vectDB++;
       _vect++;
     }
-    //_SpectrumAvailable = 1;
 }
 
 void AudioAnalyser::SerialPrint(String ToPrint, int PrioFac, bool NewLine){

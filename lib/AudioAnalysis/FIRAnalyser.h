@@ -36,7 +36,7 @@ protected:
   virtual int Configure(AudioIn* input);
   virtual void Update(const void* buffer, size_t bufferSize);
 
-  virtual filterType32 *FilterCreate( void );
+  virtual filterType32 *FilterCreate(void);
   virtual void FilterReset(filterType32 * pThis);
   virtual void FilterDestroy(filterType32 *pObject);
   virtual void FilterInit(filterType32 * pThis);  

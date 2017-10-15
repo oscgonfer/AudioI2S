@@ -95,8 +95,6 @@ private:
   i2s_state_t _state;
   int _dmaChannel;
   int _bitsPerSample;
-  //NEW
-  int _counter_once;
 
   volatile bool _dmaTransferInProgress;
   I2SDoubleBuffer _doubleBuffer;

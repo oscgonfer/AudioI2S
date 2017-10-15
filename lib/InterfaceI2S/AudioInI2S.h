@@ -11,8 +11,9 @@ public:
   AudioInI2SClass();
   virtual ~AudioInI2SClass();
 
-  int begin(long sampleRate, int bitsPerSample, int bufferReadSize);
+  int begin(long sampleRate, int bitsPerSample);
   virtual void end();
+  //void SerialPrint(String ToPrint, int PrioFac, bool NewLine);//
 
   virtual long sampleRate();
   virtual int bitsPerSample();
@@ -33,7 +34,6 @@ private:
   long _sampleRate;
   int _bitsPerSample;
   bool _callbackTriggered;
-  int _bufferReadSize;
   int _datasize;
 
 };

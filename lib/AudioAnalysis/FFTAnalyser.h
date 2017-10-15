@@ -15,14 +15,16 @@
 class FFTAnalyser : public AudioAnalyser
 {
 public:
-  FFTAnalyser(int fftSize, bool SpectrumDBOutput); //
+  FFTAnalyser(int fftSize, bool SpectrumDBOutput, int type_RMS, bool ScalingOutput); //
   virtual ~FFTAnalyser(); //
 
   //int Configure(int bufferSize, bool SpectrumDBOutput);
-  double AudioSpectrumRead(int spectrum[], int Aspectrum [], int spectrumDB[], int AspectrumDB[]);
-  double AudioRMSRead_dB();
+  double AudioSpectrumRead(int spectrum[], int spectrumDB[]);
   void SerialPrint(String ToPrint, int PrioFac, bool NewLine);//
   int Available();
+  int bufferAvailable();
+  double UPDATE_TIME();
+  double READ_TIME();
 
 protected:
   virtual int Configure(AudioIn* input);
@@ -41,17 +43,14 @@ private:
   int _bitsPerSample;
   int _channels;
   int _sampleRate;
+  int _typeWeight;
   bool _SpectrumDBOutput;
+  bool _scalingOutput;
   //RMS Results
-  double _rms_time;
   double _rms_specB;
-  double _rms_AspecB;
-  double _rms_timeDB;
   double _rms_specBDB;
-  double _rms_AspecBDB;
   //BUFFERS
   void* _sampleBuffer;
-  void* _sampleBufferWin;
     //FFT
     void* _fftBuffer;
     void* _spectrumBuffer;
@@ -60,9 +59,9 @@ private:
     void* _AspectrumBufferDB;  
   //EXTRAS
   int _SpectrumAvailable;
-  int _RMSAvailable;
   int _bufferAvailable;
-  int _available;
+  double _update_called;
+  double _read_called;
   //FFT
   arm_rfft_instance_q31 _S31;
 };

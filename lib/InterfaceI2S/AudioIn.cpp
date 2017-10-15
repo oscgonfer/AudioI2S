@@ -47,5 +47,4 @@ void AudioIn::samplesRead(void* buffer, size_t bufferReadSize)
   if (_analyser) {
     _analyser->Update(buffer, bufferReadSize);
   }
-  interrupts();
 }
