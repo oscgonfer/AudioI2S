@@ -16,13 +16,19 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
+#include "I2S_SCK.h"
+
 #include "AudioInI2S.h"
-#include <I2S_SCK.h>
 
 AudioInI2SClass::AudioInI2SClass() :
   _sampleRate(-1),
   _bitsPerSample(-1),
-  _callbackTriggered(true)
+  _callbackTriggered(true),
+  _timer_init(-1),
+  _datasize(-1),
+  _total_timer(-1),
+  _fftDone(1),
+  _mic_type(-1)
 {
 }
 
@@ -30,7 +36,7 @@ AudioInI2SClass::~AudioInI2SClass()
 {
 }
 
-int AudioInI2SClass::begin(long sampleRate, int bitsPerSample)
+int AudioInI2SClass::begin(long sampleRate, int bitsPerSample, int timer_init, int total_sampling,int mic_type)
 {
   if (!I2S_SCK.begin(I2S_PHILIPS_MODE, sampleRate, bitsPerSample)) {
     return 0;
@@ -38,13 +44,18 @@ int AudioInI2SClass::begin(long sampleRate, int bitsPerSample)
 
   _sampleRate = sampleRate;
   _bitsPerSample = bitsPerSample;
+  _timer_init = timer_init;
+  _total_timer = total_sampling;
+  _mic_type = mic_type;
 
   // add the receiver callback
   I2S_SCK.onReceive(AudioInI2SClass::onI2SReceive);
   _datasize = datasize();
 
-  // Trigger a read to kick things off
+  // trigger a read to kick things off
   I2S_SCK.read();
+
+  //delay(1000);
 
   return 1;
 }
@@ -78,6 +89,15 @@ int AudioInI2SClass::datasize()
   return I2S_SCK.datasize();
 }
 
+int AudioInI2SClass::mic_type()
+{
+  if (_mic_type) {
+    return 1; // ADAFRUIT
+  } else {
+    return 0; //INVENSENSE
+  }
+}
+
 int AudioInI2SClass::begin()
 {
   _callbackTriggered = false;
@@ -85,17 +105,42 @@ int AudioInI2SClass::begin()
   return 0;
 }
 
-
-int AudioInI2SClass::read(void* buffer, size_t bufferReadSize)
+void AudioInI2SClass::fftDone(int flag)
 {
-  int readSize = I2S_SCK.read(buffer, bufferReadSize);
-
-  if (readSize) {
-    samplesRead(buffer, readSize);    
-  }
-
-  return readSize;
+  _fftDone = flag;
 }
+
+int AudioInI2SClass::read(void* buffer, size_t size)
+{
+  
+  long _timer = millis();
+  int read = 0;
+
+  if ((_timer-_timer_init)<_total_timer){
+    if (_timer >_timer_init) {
+      SerialPrint("*continue*",6,true);
+      SerialPrint("fftDone\t" + String(_fftDone),5,true);
+      if (_fftDone) {
+        _fftDone = 0;
+        read = I2S_SCK.read(buffer, size);
+        if (read) {
+          samplesRead(buffer, read);  
+        }
+      }
+    } else {
+      read = I2S_SCK.read(buffer,size);
+    }
+  } else {
+    SerialPrint("Analysis performed for: " + String(_total_timer),6,true);
+    SerialPrint("*acquisition_end*",6,true);
+  }
+  
+
+  //Serial.println(String(_timer) + " - AudioInI2SClass::read / read " + String (read));
+  
+  return read;
+}
+
 
 int AudioInI2SClass::reset()
 {
@@ -105,7 +150,9 @@ int AudioInI2SClass::reset()
 void AudioInI2SClass::onReceive()
 {
   if (_callbackTriggered) {
+    //Serial.println("Data size = " +String(_datasize));
     uint8_t data[_datasize];
+
     read(data, sizeof(data));
   }
 }
@@ -113,6 +160,16 @@ void AudioInI2SClass::onReceive()
 void AudioInI2SClass::onI2SReceive()
 {
   AudioInI2S.onReceive();
+}
+
+//ONLY FOR PRINTING 
+void AudioInI2SClass::SerialPrint(String _to_print, int _prio_fac, bool _line)
+{
+  if (_prio_fac-PRIORITY>0) {
+      if (!_line) {
+        Serial.print(_to_print);
+      } else Serial.println(_to_print);
+  }
 }
 
 AudioInI2SClass AudioInI2S;

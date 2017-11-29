@@ -15,36 +15,10 @@
   License along with this library; if not, write to the Free Software
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
-#include "AudioAnalyser.h"
-#include "AudioIn.h"
 
-AudioIn::AudioIn() :
-  _analyser(NULL)
+#include "AudioAnalyzer.h"
+
+int AudioAnalyzer::input(AudioIn& input)
 {
-}
-
-AudioIn::~AudioIn()
-{
-}
-
-int AudioIn::setAnalyser(AudioAnalyser* analyser)
-{
-  if (_analyser) {
-    return 0;
-  }
-
-  if (!analyser->Configure(this)) {
-    return 0;
-  }
-
-  _analyser = analyser;
-
-  return 1;
-}
-
-void AudioIn::samplesRead(void* buffer, size_t bufferReadSize)
-{
-  if (_analyser) {
-    _analyser->Update(buffer, bufferReadSize);
-  }
+  return input.setAnalyzer(this);
 }

@@ -40,6 +40,8 @@ I2SClass::I2SClass(uint8_t deviceIndex, uint8_t clockGenerator, uint8_t sdPin, u
   _bitsPerSample(0),
   _dmaTransferInProgress(false),
 
+  _counter_once(0),
+
   _onTransmit(NULL),
   _onReceive(NULL)
 {
@@ -286,7 +288,7 @@ size_t I2SClass::write(const uint8_t *buffer, size_t size)
   return write((const void*)buffer, size);
 }
 
-size_t I2SClass::I2SavailableForWrite()
+int I2SClass::availableForWrite()
 {
   if (_state != I2S_STATE_TRANSMITTER) {
     enableTransmitter();
@@ -340,6 +342,45 @@ int I2SClass::read(void* buffer, size_t size)
 
   return read;
 }
+/*
+int I2SClass::once(void* buffer, size_t size, int once_iter)
+{
+  if (_state != I2S_STATE_RECEIVER) {
+    enableReceiver();
+  }
+
+  uint8_t enableInterrupts = ((__get_PRIMASK() & 0x1) == 0);
+
+  // disable interrupts,
+  __disable_irq();
+
+  if  (_counter_once<once_iter){
+    int once = _doubleBuffer.read(buffer, size);
+
+    if (_dmaTransferInProgress == false && _doubleBuffer.available() == 0) {
+      // no DMA transfer in progress, start a receive process
+      _dmaTransferInProgress = true;
+
+      DMA.transfer(_dmaChannel, i2sd.data(_deviceIndex), _doubleBuffer.data(), _doubleBuffer.availableForWrite());
+
+      // switch to the next buffer for user output (will be empty)
+      _doubleBuffer.swap();
+    }
+
+    if (enableInterrupts) {
+      // re-enable the interrupts
+      __enable_irq();
+    }
+
+  } else {
+    int once = 0;
+  }
+
+  _counter_once +=;
+
+  return once;
+}
+*/
 
 size_t I2SClass::write(int sample)
 {

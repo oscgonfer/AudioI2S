@@ -51,7 +51,7 @@ public:
   virtual size_t write(uint8_t);
   virtual size_t write(const uint8_t *buffer, size_t size);
 
-  virtual size_t I2SavailableForWrite();
+  virtual int availableForWrite();
 
   int datasize();
   int read(void* buffer, size_t size);
@@ -95,6 +95,8 @@ private:
   i2s_state_t _state;
   int _dmaChannel;
   int _bitsPerSample;
+  //NEW
+  int _counter_once;
 
   volatile bool _dmaTransferInProgress;
   I2SDoubleBuffer _doubleBuffer;

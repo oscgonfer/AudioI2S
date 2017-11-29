@@ -1,1 +1,0 @@
-function rms=rms_test_in_house(vector);rms =0;for i=1:length(vector)    rms += (vector(i))^2; endfor  rms=sqrt(rms/length(vector));  endfunction
