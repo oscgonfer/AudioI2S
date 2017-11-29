@@ -5,13 +5,14 @@
 
 #define ARM_MATH_CM0PLUS
 #include <arm_math.h>
+#include <stdlib.h> // For malloc/free
+#include <string.h> // For memset
 #define __FPU_PRESENT 0
 
-#include <AudioInI2S.h>
 
 #include "AudioAnalyser.h"
 #include "ConstantsSound.h"
-#include "fir_coeffs.h"
+#include "FilterCoefficients/fir_coeffs.h"
 
 //FILTER
 typedef struct
@@ -26,24 +27,20 @@ class FIRAnalysis : public AudioAnalyser
 {
 public:
   FIRAnalysis(uint32_t bufferSize); //
-  virtual ~FIRAnalysis(); //
+  ~FIRAnalysis(); //
 
-  double FIRRMSRead_dB();
-  void SerialPrint(String ToPrint, int PrioFac, bool NewLine);//
-  int Available();
-
-protected:
-  virtual int Configure(AudioInI2SClass* input);
-  virtual void Update(const void* buffer, size_t bufferSize);
-
-  virtual filterType32 *FilterCreate(void);
-  virtual void FilterReset(filterType32 * pThis);
-  virtual void FilterDestroy(filterType32 *pObject);
-  virtual void FilterInit(filterType32 * pThis);  
-  virtual int FilterConv(filterType32 * pThis, q31_t * pInput, q31_t * pOutput, unsigned int count );
-  virtual int FilterInChunks(filterType32 * pThis, void * pInput, void * pOutput, int length);
+  double sensorRead();
+  bool configure(AudioInI2S& input);
 
 private:
+
+  filterType32 *filterCreate();
+  void filterReset(filterType32 * pThis);
+  void filterDestroy(filterType32 *pObject);
+  void filterInit(filterType32 * pThis);  
+  int filterConv(filterType32 * pThis, q31_t * pInput, q31_t * pOutput, unsigned int count );
+  int filterInChunks(filterType32 * pThis, void * pInput, void * pOutput, int length);
+
   //BUFFER Sizes
   int _bufferSize; //Already usable bufferSize
   //PARAMETERS
@@ -51,13 +48,13 @@ private:
   int _channels;
   int _sampleRate;
   //RMS Results
-  double _rmsFilterA;
-  double _rmsFilterADB;
+  double _rmsFilter;
+  double _rmsFilterDB;
   //BUFFERS
   void* _sampleBuffer;
-    //FILTER
-    void* _sampleBufferFilt;    
-  int _FIRAvailable;
+  //FILTER
+  void* _sampleBufferFilt;    
+
 };
 
 #endif

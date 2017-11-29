@@ -53,12 +53,6 @@ int I2SClass::begin(int mode, long sampleRate, int bitsPerSample)
   return begin(mode, sampleRate, bitsPerSample, true);
 }
 
-int I2SClass::datasize()
-{
-  int _datasize = _doubleBuffer.datasize();
-  return _datasize;
-}
-
 int I2SClass::begin(int mode, int bitsPerSample)
 {
   // slave mode (not driving clock and frame select pin - input)
@@ -342,45 +336,6 @@ int I2SClass::read(void* buffer, size_t size)
 
   return read;
 }
-/*
-int I2SClass::once(void* buffer, size_t size, int once_iter)
-{
-  if (_state != I2S_STATE_RECEIVER) {
-    enableReceiver();
-  }
-
-  uint8_t enableInterrupts = ((__get_PRIMASK() & 0x1) == 0);
-
-  // disable interrupts,
-  __disable_irq();
-
-  if  (_counter_once<once_iter){
-    int once = _doubleBuffer.read(buffer, size);
-
-    if (_dmaTransferInProgress == false && _doubleBuffer.available() == 0) {
-      // no DMA transfer in progress, start a receive process
-      _dmaTransferInProgress = true;
-
-      DMA.transfer(_dmaChannel, i2sd.data(_deviceIndex), _doubleBuffer.data(), _doubleBuffer.availableForWrite());
-
-      // switch to the next buffer for user output (will be empty)
-      _doubleBuffer.swap();
-    }
-
-    if (enableInterrupts) {
-      // re-enable the interrupts
-      __enable_irq();
-    }
-
-  } else {
-    int once = 0;
-  }
-
-  _counter_once +=;
-
-  return once;
-}
-*/
 
 size_t I2SClass::write(int sample)
 {

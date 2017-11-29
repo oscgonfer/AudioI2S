@@ -1,33 +1,36 @@
-
 #ifndef _AUDIO_ANALYZER_H_INCLUDED
 #define _AUDIO_ANALYZER_H_INCLUDED
 
 #include <Arduino.h>
 
-
 #define ARM_MATH_CM0PLUS
 #include <arm_math.h>
 #include <stddef.h>
 
-#include "AudioIn.h"
+#include "../AudioInput/AudioInI2S.h"
 #include "ConstantsSound.h"
+
+enum WeightingType{
+	A_WEIGHTING,
+   	C_WEIGHTING,
+   	Z_WEIGHTING
+};
 
 //CLASS
 class AudioAnalyser
 {
 public:
-  int input(AudioIn& input);
 
-  double RMSG(void *inputBuffer, int inputSize, int typeRMS, int factor);
-  void Scaling(void *vector, int vectorSize, double factor, bool multDiv);
-  void Convert2DB(void *vectorSource, void *vectorDest, int vectorSize);
-  void SerialPrint(String _to_print, int _prio_fac, bool _line);
+	double rms(void *inputBuffer, int inputSize, int typeRMS, int factor);
+	void scaling(void *vector, int vectorSize, double factor, bool multDiv);
+	void window(void *vector, int vectorSize);
+	void convert2DB(void *vectorSource, void *vectorDest, int vectorSize);
+	void preTreatment(void *vectorSource, int vectorSourceSize, void *vectorDest, int vectorDestSize);
+	bool analyserAvailable();
+	void available(bool available);
 
 protected:
-  friend class AudioIn;
-
-  virtual int Configure(AudioIn* input) = 0;
-  virtual void Update (const void* buffer, size_t bufferUpdateSize) = 0;
+	bool _AnalyserAvailable;
 };
 
 #endif

@@ -38,11 +38,6 @@ void I2SDoubleBuffer::reset()
   _readOffset[1] = 0;
 }
 
-int I2SDoubleBuffer::datasize()
-{
-  return I2S_BUFFER_SIZE;
-}
-
 size_t I2SDoubleBuffer::availableForWrite()
 {
   return (I2S_BUFFER_SIZE - (_length[_index] - _readOffset[_index]));
