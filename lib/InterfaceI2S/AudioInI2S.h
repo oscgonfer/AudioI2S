@@ -19,6 +19,7 @@ public:
   virtual int bitsPerSample();
   virtual int channels();
   virtual int datasize();
+  void fftDone(int flag);
 
 protected:
   virtual int begin();
@@ -35,6 +36,7 @@ private:
   int _bitsPerSample;
   bool _callbackTriggered;
   int _datasize;
+  int _fftDone;
 
 };
 

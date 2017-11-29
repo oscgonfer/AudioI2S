@@ -34,7 +34,7 @@ int FIRAnalysis::Available(){
   return _FIRAvailable;
 }
 
-int FIRAnalysis::Configure(AudioIn* input){
+int FIRAnalysis::Configure(AudioInI2SClass* input){
 
     _bitsPerSample = input->bitsPerSample();
     _channels = input->channels();

@@ -33,7 +33,7 @@ public:
   int Available();
 
 protected:
-  virtual int Configure(AudioIn* input);
+  virtual int Configure(AudioInI2SClass* input);
   virtual void Update(const void* buffer, size_t bufferSize);
 
   virtual filterType32 *FilterCreate(void);

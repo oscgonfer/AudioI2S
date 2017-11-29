@@ -12,7 +12,7 @@ Circuit:
 #include <AudioI2S_SCK.h>
 
 ///// FFT Parameters
-const uint32_t fftSize = 512;
+const int fftSize = 512;
 const int bitsPerSample = 32;
 const int channels = 2;
 const int bufferReadSize = 512;
@@ -42,8 +42,9 @@ void setup() {
     }
 
     if(!fftAnalyser.input(AudioInI2S)){
-        Serial.println("Failed to init FIRAnalyser");
+        Serial.println("Failed to init FFTAnalyser");
     }
+    Serial.println("*******");
     Serial.println("Init Audio OK");
 }
 
@@ -65,12 +66,14 @@ uint32_t FreeRamMem() {
 
 void loop() {
 	if (fftAnalyser.Available()){
-        //noInterrupts();
+
 		rms_result = fftAnalyser.AudioSpectrumRead(spectrum, spectrumDB);
         //rms_FilterADB = FIRAnalysis.FIRRMSRead_dB();
-        double update_called = fftAnalyser.UPDATE_TIME();
-        double read_called = fftAnalyser.READ_TIME();
+        double read_done = millis()/1000;
+        double update_called = fftAnalyser.UPDATE_TIME()/1000;
+        double read_called = fftAnalyser.READ_TIME()/1000;
 
+        /*
         Serial.println("Buffer Results (arduino)");    
 	    for (int i = 0; i < fftSize/2; i++) {
             Serial.print((i * sampleRate) / fftSize);
@@ -82,19 +85,19 @@ void loop() {
             }
             Serial.println("");
         }
-        Serial.println("rms_result\t" + String(rms_result));
-        Serial.println("update_called\t" + String(update_called));
-        Serial.println("read_called\t" + String(read_called));
+        */
+        Serial.println("rms_result\t" + String(rms_result) + " dBA");
+        Serial.println("--");
+        Serial.println("update_called\t" + String(update_called) + " s");
+        Serial.println("read_called\t" + String(read_called) + " s");
+        Serial.println("read_done\t" + String(read_done) + " s");
+
         //Serial.println("rms_FilterADB\t" + String(rms_FilterADB));
     
         Serial.println("*******");
     
-        Serial.println("FreeRamMem\t" + String(FreeRamMem()));
-        //interrupts();
+        //Serial.println("FreeRamMem\t" + String(FreeRamMem()));
 	}
-    if (fftAnalyser.bufferAvailable()){
-        Serial.println("bufferAvailable");
-    }
 }
 
 

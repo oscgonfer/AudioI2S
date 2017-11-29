@@ -6,6 +6,7 @@
 #include <arm_math.h>
 #include <fir_coeffs.h>
 
+// A-WEIGHTING + ICS43432 EQUALISATION
 float32_t firCoeffs[FIR_COEFFS_LEN] = {
 -2.9465e-05,
 -1.6466e-05,

@@ -46,6 +46,7 @@ private:
   int _typeWeight;
   bool _SpectrumDBOutput;
   bool _scalingOutput;
+  int _fftDone;
   //RMS Results
   double _rms_specB;
   double _rms_specBDB;

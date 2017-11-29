@@ -24,6 +24,7 @@ FFTAnalyser::FFTAnalyser(int fftSize, bool SpectrumDBOutput, int typeWeight, boo
   _scalingOutput(ScalingOutput),
   _update_called(0),
   _read_called(0),
+  _fftDone(0),
   _SpectrumDBOutput(SpectrumDBOutput)
 {
 }
@@ -74,7 +75,7 @@ double FFTAnalyser::AudioSpectrumRead(int spectrum[], int spectrumDB[]){
   if (!_SpectrumAvailable) {
     return 0;
   }
-
+  /*
   switch (_typeWeight) {
     case 0: //Z_WEIGHTING
       _rms_specB = RMSG(_spectrumBuffer, _fftSize/2, 2, CONST_FACTOR); 
@@ -91,8 +92,8 @@ double FFTAnalyser::AudioSpectrumRead(int spectrum[], int spectrumDB[]){
         // COPY SPECTRUMS TO MAIN
         memcpy(spectrumDB, _spectrumBufferDB, sizeof(int) * _fftSize/2);
       }
-
       break;
+
     case 1: //A_WEIGHTING
       A_WEIGHTING(_spectrumBuffer, _AspectrumBuffer, _fftSize/2);
       _rms_specB = RMSG(_AspectrumBuffer, _fftSize/2, 2, CONST_FACTOR); 
@@ -109,19 +110,18 @@ double FFTAnalyser::AudioSpectrumRead(int spectrum[], int spectrumDB[]){
         // COPY SPECTRUMS TO MAIN
         memcpy(spectrumDB, _AspectrumBufferDB, sizeof(int) * _fftSize/2);
       }
-
       break;
   }
-
+  
   if (_scalingOutput) {
     // UPSCALING THE BUFFERS
     Scaling(_sampleBuffer,_bufferSize,CONST_FACTOR,true);
   }
-
+  */
   _SpectrumAvailable = 0;
   _bufferAvailable = 0;
   
-  _rms_specBDB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2)*_rms_specB));
+  //_rms_specBDB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2)*_rms_specB));
 
   return _rms_specBDB; 
 }
@@ -220,6 +220,8 @@ void FFTAnalyser::Update(const void*buffer, size_t bufferUpdateSize){
 
   // Set available to 0 to wait for new process
   _SpectrumAvailable = 1;
+  _fftDone = 1;
+  AudioInI2S.fftDone(_fftDone);
 }
 
 void FFTAnalyser::FFT(void *_inputBuffer, void* _outputBuffer, int _fftBufferSize){

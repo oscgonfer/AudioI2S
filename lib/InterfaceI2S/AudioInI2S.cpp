@@ -22,7 +22,8 @@
 AudioInI2SClass::AudioInI2SClass() :
   _sampleRate(-1),
   _bitsPerSample(-1),
-  _callbackTriggered(true)
+  _callbackTriggered(true),
+  _fftDone(1)
 {
 }
 
@@ -88,13 +89,21 @@ int AudioInI2SClass::begin()
 
 int AudioInI2SClass::read(void* buffer, size_t bufferReadSize)
 {
-  int readSize = I2S_SCK.read(buffer, bufferReadSize);
+  int readSize = 0;
+  if (_fftDone) {
+    _fftDone = 0;
+    readSize = I2S_SCK.read(buffer, bufferReadSize);
 
-  if (readSize) {
-    samplesRead(buffer, readSize);    
+    if (readSize) {
+      samplesCalculate(buffer, readSize);    
+    }
   }
-
   return readSize;
+}
+
+void AudioInI2SClass::fftDone(int flag)
+{
+  _fftDone = flag;
 }
 
 int AudioInI2SClass::reset()
@@ -109,6 +118,7 @@ void AudioInI2SClass::onReceive()
     read(data, sizeof(data));
   }
 }
+
 
 void AudioInI2SClass::onI2SReceive()
 {

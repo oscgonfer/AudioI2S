@@ -16,11 +16,12 @@ public:
   virtual int bitsPerSample() = 0;
   virtual int channels() = 0;
   virtual int datasize() = 0;
+  double callBackTime();
 
 protected:
   friend class AudioAnalyser;
 
-  void samplesRead(void* buffer, size_t size);
+  void samplesCalculate(void* buffer, size_t size);
 
 protected:
   virtual int begin() = 0;
