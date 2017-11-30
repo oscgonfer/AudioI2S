@@ -57,48 +57,39 @@ bool FIRAnalysis::configure(AudioInI2S& input){
 
 double FIRAnalysis::sensorRead(){
 
-  //ASK I2S about BUFFERSIZE?
-  //uint8_t _buffer[_bufferSize];
-  int32_t _buffer [_bufferSize]; //Or using directly the _sampleBuffer?
+
+//int32_t _buffer[_bufferSize]; //Or using directly the _sampleBuffer?
 
   if (!audioInI2SObject.bufferI2SAvailable()){
-    free(_buffer);
+    return 0;
   } else {
     available(false);
-    audioInI2SObject.readBuffer(_buffer,_bufferSize);
-    filterType32 *_filter = filterCreate(); // Create an instance of the filter
-    //------------------------------
-    // PRE-TREAT BUFFER - NECESSARY?
-    //------------------------------
-    int32_t* newSamples = ((int32_t*)_sampleBuffer);
-    int samples = _bufferSize / (_bitsPerSample / 8); //NEEDED?
+    if (audioInI2SObject.readBuffer(_sampleBuffer,_bufferSize)){
 
-    const int32_t *src = (const int32_t*)_buffer;
-    int32_t* dst = (int32_t*)newSamples;
+      // PRE-TREAT BUFFER - NECESSARY?
+      q31_t* dst = (q31_t*) _sampleBuffer;
 
-    for (int i = 0; i < samples; i += 2) {
-      *dst = *src / 2;
-      src++;
-      *dst += *src / 2;
-      *dst/=64; //CORRECT THE BIT NUMBER
-      src++;
-      dst++;
+      for (int i = 0; i < _bufferSize; i++) {
+        // Serial.println(*dst);
+        *dst/=128; //CORRECT THE BIT NUMBER
+        dst++;
+      }
+      filterType32 *_filter = filterCreate(); // Create an instance of the filter
+
+      // Downscale the sample buffer for proper functioning
+      scaling(_sampleBuffer, _bufferSize, CONST_FACTOR, false);
+
+      window(_sampleBuffer,_bufferSize);
+
+      // Filter by convolution - applies a-weighting + equalization + window
+      filterReset(_filter);
+      int samplesProcessed = filterInChunks(_filter, _sampleBuffer, _sampleBufferFilt, _bufferSize);
+
+      // RMS CALCULATION 
+      _rmsFilter = rms(_sampleBufferFilt, _bufferSize, 3, CONST_FACTOR); 
+      _rmsFilterDB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2)*_rmsFilter)); 
+      filterDestroy(_filter);
     }
-    //------------------------------
-  
-    // Downscale the sample buffer for proper functioning
-    scaling(_sampleBuffer, _bufferSize, CONST_FACTOR, false);
-
-    window(_sampleBuffer,_bufferSize);
-
-    // Filter by convolution - applies a-weighting + equalization + window
-    filterReset(_filter);
-    int samplesProcessed = filterInChunks(_filter, _sampleBuffer, _sampleBufferFilt, _bufferSize);
-
-    // RMS CALCULATION 
-    _rmsFilter = rms(_sampleBufferFilt, _bufferSize, 3, CONST_FACTOR); 
-    _rmsFilterDB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2)*_rmsFilter)); 
-    filterDestroy(_filter);
   }
 
 
