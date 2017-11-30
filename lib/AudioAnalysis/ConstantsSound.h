@@ -45,6 +45,3 @@ const double HANN[] = HANN_WINDOW_512;
 
 //Table 512 bufferSize
 const double EQUALTAB[] = EQUALIZER_256;
-
-///// DEBUGING SERIALPRINT FUNCTION
-const int PRIORITY = 5;

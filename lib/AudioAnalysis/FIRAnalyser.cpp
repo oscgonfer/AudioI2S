@@ -58,16 +58,15 @@ bool FIRAnalysis::configure(AudioInI2S& input){
 double FIRAnalysis::sensorRead(){
 
   //ASK I2S about BUFFERSIZE?
-  //uint8_t _buffer[_datasize];
-  int32_t _buffer[_bufferSize]; //Or using directly the _sampleBuffer?
+  //uint8_t _buffer[_bufferSize];
+  int32_t _buffer [_bufferSize]; //Or using directly the _sampleBuffer?
 
-  if (!audioInI2SObject.bufferI2SAvailable(_buffer,_bufferSize)){
+  if (!audioInI2SObject.bufferI2SAvailable()){
     free(_buffer);
   } else {
-    filterType32 *_filter = filterCreate(); // Create an instance of the filter
-
     available(false);
-
+    audioInI2SObject.readBuffer(_buffer,_bufferSize);
+    filterType32 *_filter = filterCreate(); // Create an instance of the filter
     //------------------------------
     // PRE-TREAT BUFFER - NECESSARY?
     //------------------------------

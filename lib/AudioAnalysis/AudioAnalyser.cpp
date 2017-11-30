@@ -56,6 +56,7 @@ void AudioAnalyser::convert2DB(void *vectorSource, void *vectorDest, int vectorS
 }
 
 bool AudioAnalyser::analyserAvailable() {
+  
   return _AnalyserAvailable;
 }
 

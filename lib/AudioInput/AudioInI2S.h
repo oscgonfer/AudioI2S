@@ -10,14 +10,15 @@ public:
   AudioInI2S();
   ~AudioInI2S();
 
-  int begin(long sampleRate, int bitsPerSample);
+  bool begin(long sampleRate, int bitsPerSample);
   void end();
 
   long sampleRate();
   int bitsPerSample();
   int channels();
   int datasize();
-  bool bufferI2SAvailable(void *buffer, size_t bufferReadSize);
+  bool bufferI2SAvailable();
+  bool readBuffer(void* buffer, int bufferReadSize);
 
 private:
 
@@ -34,7 +35,6 @@ private:
   bool _bufferI2SAvailable;
   //I2S PARAM
   int _datasize;
-
 };
 
 extern AudioInI2S audioInI2SObject;

@@ -14,11 +14,11 @@ Circuit:
 #include "AudioInI2S.h"
 
 ///// FFT Parameters
-const int fftSize = 512;
+const int fftSize = 64;
 const int bitsPerSample = 32;
 const int channels = 2;
-const int bufferSize = 512;
-const int sampleRate = 44100;
+const int bufferSize = 128;
+const int sampleRate = 8000;
 
 ///// OUTPUT
 int spectrum[fftSize/2];
@@ -39,6 +39,7 @@ void setup() {
     if(!fftAnalyser.configure(audioInI2SObject)){
         Serial.println("Failed to init Analyser");
     }
+
     Serial.println("*******");
     Serial.println("Init Audio OK");
 }
@@ -60,14 +61,14 @@ uint32_t FreeRamMem() {
 }
 
 void loop() {
-	if (fftAnalyser.analyserAvailable()){
+	//if (fftAnalyser.analyserAvailable()){
 
         //READ RMS AND SPECTRUM
 		DB = fftAnalyser.sensorRead(spectrum);
         //READ ONLY RMS
         //RMS = fftAnalyser.sensorRead();
 
-        
+        /*
         Serial.println("Buffer Results (arduino)");    
 	    for (int i = 0; i < fftSize/2; i++) {
             Serial.print((i * sampleRate) / fftSize);
@@ -79,8 +80,11 @@ void loop() {
         Serial.println("rms_result\t" + String(DB) + " dB");
         Serial.println("--");
         Serial.println("*******");
+        Serial.println("FreeRamMem\t" + String(FreeRamMem()));*/
+
+        Serial.println(DB);
         Serial.println("FreeRamMem\t" + String(FreeRamMem()));
-	}
+	//}
 }
 
 

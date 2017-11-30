@@ -30,7 +30,7 @@ public:
 	void available(bool available);
 
 protected:
-	bool _AnalyserAvailable;
+	bool _AnalyserAvailable = false;
 };
 
 #endif

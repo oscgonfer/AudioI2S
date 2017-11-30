@@ -12,7 +12,7 @@ AudioInI2S::~AudioInI2S()
 {
 }
 
-int AudioInI2S::begin(long sampleRate, int bitsPerSample)
+bool AudioInI2S::begin(long sampleRate, int bitsPerSample)
 {
   if (!I2S_SCK.begin(I2S_PHILIPS_MODE, sampleRate, bitsPerSample)) {
     return 0;
@@ -22,10 +22,14 @@ int AudioInI2S::begin(long sampleRate, int bitsPerSample)
   _bitsPerSample = bitsPerSample;
 
   // add the receiver callback
-  I2S_SCK.onReceive(AudioInI2S::onI2SReceive);
+  //I2S_SCK.onReceive(AudioInI2S::onI2SReceive);
 
-  // Trigger a read to kick things off
-  I2S_SCK.read();
+  int _delay = 263000;
+  //Initialisation
+  for (int i = 0; i< _delay; i++) {
+      // Trigger a read to kick things off
+      I2S_SCK.read();
+  }
 
   return 1;
 }
@@ -56,26 +60,41 @@ int AudioInI2S::channels()
   return 2;
 }
 
-bool AudioInI2S::bufferI2SAvailable(void *buffer, size_t bufferReadSize){
+bool AudioInI2S::bufferI2SAvailable(){
 
-  bool bufferI2SAvailable = _bufferI2SAvailable;
+  return _bufferI2SAvailable;
+}
 
-  if (_bufferI2SAvailable == true) {
+bool AudioInI2S::readBuffer(void *buffer, int bufferSize) {
+  int32_t sample = 0;
+  int32_t counter = 0;
+  int32_t *buff = (int32_t*) buffer;
 
-    I2S_SCK.read(buffer, bufferReadSize);
+  //if (_bufferI2SAvailable == true) {
 
-  }
+    //FILL BUFFER HERE
+    while (counter < bufferSize) {
+      sample = I2S_SCK.read();
+      if (sample) {
+        *buff = sample;
+        buff++;
+        counter++;
+      }
+    }
 
-  _bufferI2SAvailable = false;
+    return true;
 
-  return bufferI2SAvailable;
+  /*} else {
+    return false;
+  }*/
+
+  //_bufferI2SAvailable = false;
 }
 
 void AudioInI2S::onReceive()
 {
-  if (_callbackTriggered) {
-    _bufferI2SAvailable = true;
-  }
+  //I2S_SCK.read();
+  _bufferI2SAvailable = true;
 }
 
 void AudioInI2S::onI2SReceive()
