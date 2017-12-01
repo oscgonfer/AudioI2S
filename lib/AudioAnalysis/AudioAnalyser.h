@@ -22,14 +22,24 @@ enum RMSType{
 	TIME_WO_WIN
 };
 
+enum WindowType{
+	HANN,
+	HAMMING,
+	BLACKMAN
+};
+
 //CLASS
 class AudioAnalyser
 {
 public:
 	double rms(void *inputBuffer, int inputSize, RMSType typeRMS, int factor);
 	void scaling(void *vector, int vectorSize, double factor, bool multDiv);
-	void window(void *vector, int vectorSize);
+	bool window(void *vector, void *windowTable, int vectorSize);
 	void convert2DB(void *vector, int vectorSize);
+	void createWindow(void *vector, int vectorSize, WindowType windowType);
+
+public:
+	double _factorRMS;
 
 };
 

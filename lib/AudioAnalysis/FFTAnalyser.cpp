@@ -9,6 +9,7 @@ FFTAnalyser::FFTAnalyser(int bufferSize, int fftSize, WeightingType weighting_ty
   _fftBuffer(NULL),
   _spectrumBuffer(NULL),
   _weightingTable(NULL),
+  _windowTable(NULL),
   //RMS
   _rms(0),
   _rmsDB(0),
@@ -49,11 +50,14 @@ bool FFTAnalyser::configure(AudioInI2S& input){
   //Allocate frequency buffers
   _fftBuffer = calloc(_fftSize, sizeof(q31_t));
   _spectrumBuffer = calloc(_fftSize/2, sizeof(q31_t));
+  //Allocate table for window
+  _windowTable = calloc(_bufferSize, sizeof(double));
   //Allocate table for weighting
   _weightingTable = calloc(_fftSize/2, sizeof(double));
 
+  createWindow(_windowTable, _bufferSize, HANN);
   createWeighting(_weightingTable, _sampleRate);
-      
+   
   //Free all buffers in case of bad allocation
   if (_sampleBuffer == NULL || _fftBuffer == NULL || _spectrumBuffer == NULL) {
 
@@ -90,9 +94,9 @@ double FFTAnalyser::sensorRead(int spectrum[]){
       // Downscale the sample buffer for proper functioning
       scaling(_sampleBuffer, _bufferSize, CONST_FACTOR, false);
 
-      // Apply Hann Window
-      window(_sampleBuffer,_bufferSize);
-    
+      // Apply Window
+      window(_sampleBuffer, _windowTable, _bufferSize);
+
       // FFT
       fft(_sampleBuffer, _spectrumBuffer, _fftSize);
 
@@ -144,8 +148,8 @@ double FFTAnalyser::sensorRead(){
       // Downscale the sample buffer in order to be able to calculate SQUARES
       scaling(_sampleBuffer, _bufferSize, CONST_FACTOR, false);
 
-      // Apply Hann Window
-      window(_sampleBuffer,_bufferSize);
+      // Apply Window
+      window(_sampleBuffer, _windowTable, _bufferSize);
     
       // FFT
       fft(_sampleBuffer, _spectrumBuffer, _fftSize);
@@ -220,6 +224,7 @@ void FFTAnalyser::equalising(void *inputBuffer, int inputSize){
 }
 
 void FFTAnalyser::createWeighting(void *weightingTable, long sampleRate) {
+  // Custom creation of Weighting function based on type, fftSize and sampleRate
   double* wT = (double*) weightingTable;
   double freq = 0;
   double freqSQ = 0;
@@ -252,26 +257,26 @@ void FFTAnalyser::weighting(void *inputBuffer, int inputSize){
   //Apply weighting to Buffer
 
   /*
-  //NORMAL ACTUAL
-  q31_t* spB = (q31_t*)inputBuffer;
-  double weighingfactor = 0;
-  
-  for (int i = 0; i < inputSize; i ++) {
-    //Apply weighting
-    switch (_weighting_type) {
-
-      case A_WEIGHTING: //A_WEIGHTING
-        weighingfactor = A_WEIGHTINGTAB[i];
-        break;
-
-      case C_WEIGHTING: //C_WEIGHTING
-        weighingfactor = C_WEIGHTINGTAB[i];
-        break;
-    }
+    //NORMAL ACTUAL
+    q31_t* spB = (q31_t*)inputBuffer;
+    double weighingfactor = 0;
     
-    *spB *= weighingfactor;
-    spB++;
-  }
+    for (int i = 0; i < inputSize; i ++) {
+      //Apply weighting
+      switch (_weighting_type) {
+
+        case A_WEIGHTING: //A_WEIGHTING
+          weighingfactor = A_WEIGHTINGTAB[i];
+          break;
+
+        case C_WEIGHTING: //C_WEIGHTING
+          weighingfactor = C_WEIGHTINGTAB[i];
+          break;
+      }
+      
+      *spB *= weighingfactor;
+      spB++;
+    }
   */
 
   //UPGRADE

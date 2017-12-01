@@ -47,6 +47,7 @@ private:
   void* _fftBuffer;
   void* _spectrumBuffer;
   void* _weightingTable;
+  void* _windowTable;
   //FFT
   arm_rfft_instance_q31 _S31;
 };

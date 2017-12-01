@@ -27,10 +27,10 @@ double AudioAnalyser::rms(void *inputBuffer, int inputSize, RMSType typeRMS, int
   
   switch (typeRMS) {
     case TIME_W_WIN: //TIME DOMAIN SIGNAL W/ WINDOW
-      _rmsOut = _rmsOut * 1/RMS_HANN* FACTOR; 
+      _rmsOut = _rmsOut * 1/_factorRMS* FACTOR; 
       break;
     case FREQ: //SPECTRUM IN FREQ DOMAIN
-      _rmsOut = _rmsOut * 1/RMS_HANN * FACTOR * sqrt(inputSize) / sqrt(2); 
+      _rmsOut = _rmsOut * 1/_factorRMS * FACTOR * sqrt(inputSize) / sqrt(2); 
       break;
     case TIME_WO_WIN: //TIME DOMAIN SIGNAL W/O WINDOW
       _rmsOut = _rmsOut * FACTOR; 
@@ -41,25 +41,60 @@ double AudioAnalyser::rms(void *inputBuffer, int inputSize, RMSType typeRMS, int
 
 void AudioAnalyser::convert2DB(void *vector, int vectorSize){
 
-    q31_t* _vect = (q31_t*) vector;
+  q31_t* _vect = (q31_t*) vector;
 
-    for (int i = 0; i<vectorSize;i++){
-      if (*_vect>0){ 
-        *_vect = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2) * (*_vect)));
-      } else {
-        *_vect = 0;
-      }
-      _vect++;
+  for (int i = 0; i<vectorSize;i++){
+    if (*_vect>0){ 
+      *_vect = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2) * (*_vect)));
+    } else {
+      *_vect = 0;
     }
+    _vect++;
+  }
 }
 
-void AudioAnalyser::window(void *vector, int vectorSize){
+bool AudioAnalyser::window(void *vector, void *windowTable, int vectorSize){
   q31_t* srcW = (q31_t*)vector;
+  double* win = (double*) windowTable;
 
-  //Apply hann window in time-domain
+  //Apply window in time-domain
   for (int i = 0; i < vectorSize; i ++) {
-    double window = HANN[i];
-    (*srcW) *= window;
+    (*srcW) *= *win;
     srcW++;
+    win++;
+  }
+  return true;
+}
+
+void AudioAnalyser::createWindow(void *vector, int vectorSize, WindowType windowType){
+  double * vect = (double*) vector;
+
+  for (int i = 0; i < vectorSize; i++) {
+    switch (windowType) {
+      case HANN:
+        *vect = 0.5*(1-cos(2*3.14159*i/(vectorSize-1)));
+        vect++;
+        break;
+      case HAMMING:
+        *vect = 0.54-0.46*cos(2*3.14159*i/(vectorSize-1));
+        vect++;
+        break;
+      case BLACKMAN:
+        *vect = 7938/18608 - 9240/18608*cos(2*3.14159*i/(vectorSize-1))+1430/18608*cos(4*3.14159*i/(vectorSize-1));
+        vect++;
+        break;
+    }
+  } 
+  
+  switch (windowType) {
+    case HANN:
+      _factorRMS = 0.61207;
+      break;
+    case HAMMING:
+      _factorRMS = 0.63009;
+      break;
+    case BLACKMAN:
+      _factorRMS = 0.55164;
+      break;
   }
 }

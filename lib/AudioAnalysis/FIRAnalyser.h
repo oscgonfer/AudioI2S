@@ -54,6 +54,7 @@ private:
   void* _sampleBuffer;
   //FILTER
   void* _sampleBufferFilt;
+  void* _windowTable;
   unsigned int _chunkLength;    
 
 };

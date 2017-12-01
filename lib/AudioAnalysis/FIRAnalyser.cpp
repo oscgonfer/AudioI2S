@@ -6,6 +6,7 @@ FIRAnalysis::FIRAnalysis(int bufferSize) :
   //BUFFERs
   _sampleBuffer(NULL),
   _sampleBufferFilt(NULL),
+  _windowTable(NULL),
   _rms(0),
   _rmsDB(0),
   //EXTRAS
@@ -37,7 +38,12 @@ bool FIRAnalysis::configure(AudioInI2S& input){
       
     //Allocate results buffer
     _sampleBufferFilt = calloc(_bufferSize, sizeof(q31_t));
-      
+    
+    //Allocate table for weighting
+    _windowTable = calloc(_bufferSize, sizeof(double));
+
+    createWindow(_windowTable, _bufferSize, HANN);
+    
     //Free all buffers in case of bad allocation
     if (_sampleBuffer == NULL || _sampleBufferFilt == NULL){
 
@@ -71,15 +77,22 @@ double FIRAnalysis::sensorRead(){
       // Downscale the sample buffer for proper functioning
       scaling(_sampleBuffer, _bufferSize, CONST_FACTOR, false);
 
-      // Apply Hann Window
-      window(_sampleBuffer,_bufferSize);
+      // Apply Window
+      bool windowApplied = window(_sampleBuffer, _windowTable, _bufferSize);
+      RMSType RMSToApply;
+
+      if (windowApplied) {
+        RMSToApply = TIME_W_WIN;
+      } else {
+        RMSToApply = TIME_WO_WIN;
+      }
 
       // Filter by convolution - applies a-weighting + equalization + window
       filterReset(_filter);
       filterInChunks(_filter, _sampleBuffer, _sampleBufferFilt, _bufferSize);
 
       // RMS CALCULATION 
-      _rms = rms(_sampleBufferFilt, _bufferSize, TIME_WO_WIN, CONST_FACTOR); 
+      _rms = rms(_sampleBufferFilt, _bufferSize, RMSToApply, CONST_FACTOR); 
       _rmsDB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2)*_rms)); 
       filterDestroy(_filter);
 
@@ -113,7 +126,6 @@ int FIRAnalysis::filterInChunks(filterType32* pThis, void* pInput, void* pOutput
     if( chunkLength > length ) chunkLength = length;  
     // Filter the block and determine the number of returned samples   
     outLength = filterConv(pThis, _pInpBuffer, _pOutBuffer, chunkLength);
-    //SerialPrint("outLength\t" + String(outLength),6,true);
     // Update the output pointer
     _pOutBuffer += outLength;            
     // Update the total number of samples output           
