@@ -26,7 +26,7 @@ typedef struct
 class FIRAnalysis : public AudioAnalyser
 {
 public:
-  FIRAnalysis(uint32_t bufferSize); //
+  FIRAnalysis(int bufferSize); //
   ~FIRAnalysis(); //
 
   double sensorRead();
@@ -38,7 +38,7 @@ private:
   void filterReset(filterType32 * pThis);
   void filterDestroy(filterType32 *pObject);
   void filterInit(filterType32 * pThis);  
-  int filterConv(filterType32 * pThis, q31_t * pInput, q31_t * pOutput, unsigned int count );
+  int filterConv(filterType32 * pThis, q31_t * pInput, q31_t * pOutput, unsigned int count);
   int filterInChunks(filterType32 * pThis, void * pInput, void * pOutput, int length);
 
   //BUFFER Sizes
@@ -48,12 +48,13 @@ private:
   int _channels;
   int _sampleRate;
   //RMS Results
-  double _rmsFilter;
-  double _rmsFilterDB;
+  double _rms;
+  double _rmsDB;
   //BUFFERS
   void* _sampleBuffer;
   //FILTER
-  void* _sampleBufferFilt;    
+  void* _sampleBufferFilt;
+  unsigned int _chunkLength;    
 
 };
 

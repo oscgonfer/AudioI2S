@@ -29,6 +29,7 @@ private:
   void fft(void *inputBuffer, void* outputBuffer, int fftBufferSize);
   void equalising(void *inputBuffer, int inputSize);
   void weighting(void *inputBuffer, int inputSize);
+  void createWeighting(void *weightingTable, long sampleRate);
 
   //BUFFER Sizes
   int _fftSize;
@@ -39,13 +40,13 @@ private:
   int _sampleRate;
   WeightingType _weighting_type;
   //RMS Results
-  double _rmsSpecB;
-  double _rmsSpecBDB;
+  double _rms;
+  double _rmsDB;
   //BUFFERS
   void* _sampleBuffer;
   void* _fftBuffer;
   void* _spectrumBuffer;
-  void* _spectrumBufferDB;
+  void* _weightingTable;
   //FFT
   arm_rfft_instance_q31 _S31;
 };

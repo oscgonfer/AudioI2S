@@ -16,21 +16,21 @@ enum WeightingType{
    	Z_WEIGHTING
 };
 
+enum RMSType{
+	TIME_W_WIN,
+	FREQ,
+	TIME_WO_WIN
+};
+
 //CLASS
 class AudioAnalyser
 {
 public:
-
-	double rms(void *inputBuffer, int inputSize, int typeRMS, int factor);
+	double rms(void *inputBuffer, int inputSize, RMSType typeRMS, int factor);
 	void scaling(void *vector, int vectorSize, double factor, bool multDiv);
 	void window(void *vector, int vectorSize);
-	void convert2DB(void *vectorSource, void *vectorDest, int vectorSize);
-	void preTreatment(void *vectorSource, int vectorSourceSize, void *vectorDest, int vectorDestSize);
-	bool analyserAvailable();
-	void available(bool available);
+	void convert2DB(void *vector, int vectorSize);
 
-protected:
-	bool _AnalyserAvailable = false;
 };
 
 #endif

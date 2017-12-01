@@ -1,17 +1,18 @@
 #include "FIRAnalyser.h"
 
-FIRAnalysis::FIRAnalysis(uint32_t bufferSize) :
+FIRAnalysis::FIRAnalysis(int bufferSize) :
   //BUFFER Sizes
   _bufferSize(bufferSize), //Already usable buffersize
   //BUFFERs
   _sampleBuffer(NULL),
   _sampleBufferFilt(NULL),
-  _rmsFilter(0),
-  _rmsFilterDB(0),
+  _rms(0),
+  _rmsDB(0),
   //EXTRAS
   _bitsPerSample(-1),
   _channels(-1),
-  _sampleRate(0)
+  _sampleRate(0),
+  _chunkLength(30)
 {
 }
 
@@ -31,11 +32,11 @@ bool FIRAnalysis::configure(AudioInI2S& input){
     _channels = input.channels();
 
     //Allocate memory for buffers
-      //Allocate time buffer
-      _sampleBuffer = calloc(_bufferSize, sizeof(q31_t));
+    //Allocate time buffer
+    _sampleBuffer = calloc(_bufferSize, sizeof(q31_t));
       
-      //Allocate results buffer
-      _sampleBufferFilt = calloc(_bufferSize, sizeof(q31_t));
+    //Allocate results buffer
+    _sampleBufferFilt = calloc(_bufferSize, sizeof(q31_t));
       
     //Free all buffers in case of bad allocation
     if (_sampleBuffer == NULL || _sampleBufferFilt == NULL){
@@ -50,56 +51,50 @@ bool FIRAnalysis::configure(AudioInI2S& input){
         _sampleBuffer = NULL;
       }
 
-      return 0;
+      return false;
     }
-    return 1;
+    return true;
 }
 
 double FIRAnalysis::sensorRead(){
 
-
-//int32_t _buffer[_bufferSize]; //Or using directly the _sampleBuffer?
-
   if (!audioInI2SObject.bufferI2SAvailable()){
+
     return 0;
+
   } else {
-    available(false);
+
     if (audioInI2SObject.readBuffer(_sampleBuffer,_bufferSize)){
 
-      // PRE-TREAT BUFFER - NECESSARY?
-      q31_t* dst = (q31_t*) _sampleBuffer;
-
-      for (int i = 0; i < _bufferSize; i++) {
-        // Serial.println(*dst);
-        *dst/=128; //CORRECT THE BIT NUMBER
-        dst++;
-      }
       filterType32 *_filter = filterCreate(); // Create an instance of the filter
 
       // Downscale the sample buffer for proper functioning
       scaling(_sampleBuffer, _bufferSize, CONST_FACTOR, false);
 
+      // Apply Hann Window
       window(_sampleBuffer,_bufferSize);
 
       // Filter by convolution - applies a-weighting + equalization + window
       filterReset(_filter);
-      int samplesProcessed = filterInChunks(_filter, _sampleBuffer, _sampleBufferFilt, _bufferSize);
+      filterInChunks(_filter, _sampleBuffer, _sampleBufferFilt, _bufferSize);
 
       // RMS CALCULATION 
-      _rmsFilter = rms(_sampleBufferFilt, _bufferSize, 3, CONST_FACTOR); 
-      _rmsFilterDB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2)*_rmsFilter)); 
+      _rms = rms(_sampleBufferFilt, _bufferSize, TIME_WO_WIN, CONST_FACTOR); 
+      _rmsDB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2)*_rms)); 
       filterDestroy(_filter);
+
+      // Free buffers
+      // free(_sampleBuffer);
+      // free(_sampleBufferFilt);
+
+      return _rmsDB;
+
+    } else {
+
+      return 0;
+
     }
   }
-
-
-  free(_sampleBuffer);
-  free(_sampleBufferFilt);
-
-  // Set available to true
-  available(true);
-
-  return _rmsFilterDB;
 }
 
 
@@ -113,7 +108,7 @@ int FIRAnalysis::filterInChunks(filterType32* pThis, void* pInput, void* pOutput
   while( length > 0 )
   {
     // Choose chunkLength from 0-30
-    chunkLength = 30;
+    chunkLength = _chunkLength;
     // Limit chunk length to the number of remaining samples                                  
     if( chunkLength > length ) chunkLength = length;  
     // Filter the block and determine the number of returned samples   

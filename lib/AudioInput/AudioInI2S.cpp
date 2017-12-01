@@ -4,7 +4,7 @@ AudioInI2S::AudioInI2S() :
   _sampleRate(-1),
   _bitsPerSample(-1),
   _callbackTriggered(false),
-  _bufferI2SAvailable(true)
+  _bufferI2SAvailable(false)
 {
 }
 
@@ -14,24 +14,25 @@ AudioInI2S::~AudioInI2S()
 
 bool AudioInI2S::begin(long sampleRate, int bitsPerSample)
 {
-  if (!I2S_SCK.begin(I2S_PHILIPS_MODE, sampleRate, bitsPerSample)) {
-    return 0;
+  if (!I2S.begin(I2S_PHILIPS_MODE, sampleRate, bitsPerSample)) {
+    return false;
   }
 
   _sampleRate = sampleRate;
   _bitsPerSample = bitsPerSample;
 
   // add the receiver callback
-  //I2S_SCK.onReceive(AudioInI2S::onI2SReceive);
+  //I2S.onReceive(AudioInI2S::onI2SReceive);
 
+  //Initialisation 
   int _delay = 263000;
-  //Initialisation
+  
   for (int i = 0; i< _delay; i++) {
       // Trigger a read to kick things off
-      I2S_SCK.read();
+      I2S.read();
   }
 
-  return 1;
+  return true;
 }
 
 void AudioInI2S::end()
@@ -42,7 +43,7 @@ void AudioInI2S::end()
   _bufferI2SAvailable = false;
   _callbackTriggered = false;
 
-  I2S_SCK.end();
+  I2S.end();
 }
 
 long AudioInI2S::sampleRate()
@@ -65,35 +66,28 @@ bool AudioInI2S::bufferI2SAvailable(){
   return _bufferI2SAvailable;
 }
 
-bool AudioInI2S::readBuffer(void *buffer, int bufferSize) {
+int AudioInI2S::readBuffer(void *buffer, int bufferSize) {
   int32_t sample = 0;
   int32_t counter = 0;
   int32_t *buff = (int32_t*) buffer;
 
-  //if (_bufferI2SAvailable == true) {
-
-    //FILL BUFFER HERE
-    while (counter < bufferSize) {
-      sample = I2S_SCK.read();
-      if (sample) {
-        *buff = sample;
-        buff++;
-        counter++;
-      }
+  //FILL BUFFER HERE
+  while (counter < bufferSize) {
+    sample = I2S.read();
+    if (sample) {
+      *buff = sample/128; //BIT CORRRECTION
+      buff++;
+      counter++;
     }
+  }
 
-    return true;
+  _bufferI2SAvailable = false;
 
-  /*} else {
-    return false;
-  }*/
-
-  //_bufferI2SAvailable = false;
+  return counter;
 }
 
 void AudioInI2S::onReceive()
 {
-  //I2S_SCK.read();
   _bufferI2SAvailable = true;
 }
 

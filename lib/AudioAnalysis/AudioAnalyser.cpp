@@ -14,8 +14,8 @@ void AudioAnalyser::scaling(void *vector, int vectorSize, double factor, bool mu
   }
 }
 
-double AudioAnalyser::rms(void *inputBuffer, int inputSize, int typeRMS, int FACTOR){ 
-  //typeRMS = 1 if time domain -- typeRMS = 2 if spectrum domain
+double AudioAnalyser::rms(void *inputBuffer, int inputSize, RMSType typeRMS, int FACTOR){ 
+  
   double _rmsOut = 0;
   const q31_t* _pBuffer = (const q31_t*) inputBuffer; 
  
@@ -26,42 +26,31 @@ double AudioAnalyser::rms(void *inputBuffer, int inputSize, int typeRMS, int FAC
   _rmsOut = sqrt(_rmsOut/inputSize); 
   
   switch (typeRMS) {
-    case 1: //TIME DOMAIN SIGNAL
+    case TIME_W_WIN: //TIME DOMAIN SIGNAL W/ WINDOW
       _rmsOut = _rmsOut * 1/RMS_HANN* FACTOR; 
       break;
-    case 2: //SPECTRUM IN FREQ DOMAIN
+    case FREQ: //SPECTRUM IN FREQ DOMAIN
       _rmsOut = _rmsOut * 1/RMS_HANN * FACTOR * sqrt(inputSize) / sqrt(2); 
       break;
-    case 3:
+    case TIME_WO_WIN: //TIME DOMAIN SIGNAL W/O WINDOW
       _rmsOut = _rmsOut * FACTOR; 
   }
   
   return _rmsOut;
 } 
 
-void AudioAnalyser::convert2DB(void *vectorSource, void *vectorDest, int vectorSize){
+void AudioAnalyser::convert2DB(void *vector, int vectorSize){
 
-    q31_t* _vectDB = (q31_t*) vectorDest;
-    const q31_t* _vect = (const q31_t*) vectorSource;
+    q31_t* _vect = (q31_t*) vector;
 
     for (int i = 0; i<vectorSize;i++){
       if (*_vect>0){ 
-        *_vectDB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2) * (*_vect)));
+        *_vect = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2) * (*_vect)));
       } else {
-        *_vectDB = 0;
+        *_vect = 0;
       }
-      _vectDB++;
       _vect++;
     }
-}
-
-bool AudioAnalyser::analyserAvailable() {
-  
-  return _AnalyserAvailable;
-}
-
-void AudioAnalyser::available(bool available) {
-  _AnalyserAvailable = available;
 }
 
 void AudioAnalyser::window(void *vector, int vectorSize){

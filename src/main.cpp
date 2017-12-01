@@ -9,21 +9,23 @@ Circuit:
    * SD connected to pin 9
 */
 
-#include "AudioAnalyser.h"
 #include "FFTAnalyser.h"
 #include "AudioInI2S.h"
 
 ///// FFT Parameters
-const int fftSize = 64;
-const int bitsPerSample = 32;
-const int channels = 2;
-const int bufferSize = 128;
-const int sampleRate = 8000;
+const int fftSize = 512; //IF THIS CHANGES, WEIGHTING FUNCTION AND EQUALISATION TABLE CHANGE
+
+//// AUDIO I2S Parameters
+const int bitsPerSample = 32; // FIXED FOR ICS43432 (24bit)
+const int channels = 2; //FIXED
+const int bufferSize = 512;  //IF THIS CHANGES, HANN WINDOW FUNCTION CHANGES
+const int sampleRate = 8000; //Hz
 
 ///// OUTPUT
 int spectrum[fftSize/2];
-double DB = 0;
-///// DEFINE ANALYSER
+double resultDB = 0;
+
+///// Analyser
 FFTAnalyser fftAnalyser(bufferSize, fftSize, A_WEIGHTING);
 //FIRAnalysis FIRAnalysis(bufferSize);
 
@@ -31,17 +33,19 @@ void setup() {
 	// Open serial communications
 	Serial.begin(115200);
 
- 	// Configure Analysis
+ 	// Configure Audio Input
     if(!audioInI2SObject.begin(sampleRate, bitsPerSample)){
         Serial.println("Failed to init I2S");
     }
 
+    // Configure Analyser
     if(!fftAnalyser.configure(audioInI2SObject)){
         Serial.println("Failed to init Analyser");
     }
 
-    Serial.println("*******");
+    Serial.println("-------------");
     Serial.println("Init Audio OK");
+
 }
 
 uint32_t FreeRamMem() {
@@ -61,30 +65,26 @@ uint32_t FreeRamMem() {
 }
 
 void loop() {
-	//if (fftAnalyser.analyserAvailable()){
 
-        //READ RMS AND SPECTRUM
-		DB = fftAnalyser.sensorRead(spectrum);
-        //READ ONLY RMS
-        //RMS = fftAnalyser.sensorRead();
+    //READ RMS AND SPECTRUM
+	resultDB = fftAnalyser.sensorRead(spectrum);
+    //READ ONLY RMS
+    //RMS = fftAnalyser.sensorRead();
 
-        /*
-        Serial.println("Buffer Results (arduino)");    
-	    for (int i = 0; i < fftSize/2; i++) {
-            Serial.print((i * sampleRate) / fftSize);
-            Serial.print("\t");
-            Serial.print(spectrum[i]);
-            Serial.println("");
-        }
-        
-        Serial.println("rms_result\t" + String(DB) + " dB");
-        Serial.println("--");
-        Serial.println("*******");
-        Serial.println("FreeRamMem\t" + String(FreeRamMem()));*/
+    /*
+    //PRINT BUFFER RESULTS
+    Serial.println("Buffer Results (arduino)");    
+    for (int i = 0; i < fftSize/2; i++) {
+        Serial.print((i * sampleRate) / fftSize);
+        Serial.print("\t");
+        Serial.print(spectrum[i]);
+        Serial.println("");
+    }
+    Serial.println("*******");
+    */
 
-        Serial.println(DB);
-        Serial.println("FreeRamMem\t" + String(FreeRamMem()));
-	//}
+    Serial.println(resultDB);
+    Serial.println("FreeRamMem\t" + String(FreeRamMem()));
 }
 
 
