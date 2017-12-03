@@ -13,12 +13,11 @@ Circuit:
 #include "AudioInI2S.h"
 
 ///// FFT Parameters
-const int fftSize = 512; //IF THIS CHANGES, WEIGHTING FUNCTION AND EQUALISATION TABLE CHANGE
+const int fftSize = 512; //IF THIS CHANGES EQUALISATION TABLE CHANGE
 
 //// AUDIO I2S Parameters
-const int bitsPerSample = 32; // FIXED FOR ICS43432 (24bit)
-const int channels = 2; //FIXED
-const int bufferSize = 512;  //IF THIS CHANGES, HANN WINDOW FUNCTION CHANGES
+const int bitsPerSample = 32; //CONSTANT FOR ICS43432 (24bit)
+const int bufferSize = 512;
 const int sampleRate = 8000; //Hz
 
 ///// OUTPUT
@@ -26,8 +25,8 @@ int spectrum[fftSize/2];
 double resultDB = 0;
 
 ///// Analyser
-FFTAnalyser fftAnalyser(bufferSize, fftSize, A_WEIGHTING);
-//FIRAnalysis FIRAnalysis(bufferSize);
+FFTAnalyser fftAnalyser(bufferSize, fftSize, A_WEIGHTING, HANN);
+//FIRAnalysis FIRAnalysis(bufferSize, HANN);
 
 void setup() {
 	// Open serial communications

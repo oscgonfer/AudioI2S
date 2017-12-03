@@ -6,18 +6,16 @@
 #define ARM_MATH_CM0PLUS
 #include <arm_math.h>
 
-#include "../AudioInput/AudioInI2S.h"
-
+#include "EqualisationCoefficients/equalisation_coeffs.h"
 #include "AudioAnalyser.h"
 #include "ConstantsSound.h"
-
 
 //CLASS
 class FFTAnalyser : public AudioAnalyser
 {
 public:
 
-  FFTAnalyser(int bufferSize, int fftSize, WeightingType weighting_type); //
+  FFTAnalyser(int bufferSize, int fftSize, WeightingType weightingType, WindowType windowType); //
   ~FFTAnalyser(); //
 
   //int Configure(int bufferSize, bool SpectrumDBOutput);
@@ -27,18 +25,19 @@ public:
 
 private:
   void fft(void *inputBuffer, void* outputBuffer, int fftBufferSize);
-  void equalising(void *inputBuffer, int inputSize);
+  void equalising(void *inputBuffer, void *equaliserTable, int inputSize);
   void weighting(void *inputBuffer, int inputSize);
   void createWeighting(void *weightingTable, long sampleRate);
+  void createEqualiser(void *equaliserTable);
 
   //BUFFER Sizes
   int _fftSize;
   int _bufferSize; //Already usable bufferSize
   //PARAMETERS
   int _bitsPerSample;
-  int _channels;
   int _sampleRate;
   WeightingType _weighting_type;
+  WindowType _window_type;
   //RMS Results
   double _rms;
   double _rmsDB;
@@ -48,6 +47,7 @@ private:
   void* _spectrumBuffer;
   void* _weightingTable;
   void* _windowTable;
+  void* _equaliserTable;
   //FFT
   arm_rfft_instance_q31 _S31;
 };

@@ -1,6 +1,6 @@
 #include "FIRAnalyser.h"
 
-FIRAnalysis::FIRAnalysis(int bufferSize) :
+FIRAnalysis::FIRAnalysis(int bufferSize, WindowType windowType) :
   //BUFFER Sizes
   _bufferSize(bufferSize), //Already usable buffersize
   //BUFFERs
@@ -11,9 +11,9 @@ FIRAnalysis::FIRAnalysis(int bufferSize) :
   _rmsDB(0),
   //EXTRAS
   _bitsPerSample(-1),
-  _channels(-1),
   _sampleRate(0),
-  _chunkLength(30)
+  _chunkLength(30),
+  _window_type(windowType)
 {
 }
 
@@ -29,37 +29,36 @@ FIRAnalysis::~FIRAnalysis(){
 
 bool FIRAnalysis::configure(AudioInI2S& input){
 
-    _bitsPerSample = input.bitsPerSample();
-    _channels = input.channels();
+  _bitsPerSample = input.bitsPerSample();
 
-    //Allocate memory for buffers
-    //Allocate time buffer
-    _sampleBuffer = calloc(_bufferSize, sizeof(q31_t));
-      
-    //Allocate results buffer
-    _sampleBufferFilt = calloc(_bufferSize, sizeof(q31_t));
+  //Allocate memory for buffers
+  //Allocate time buffer
+  _sampleBuffer = calloc(_bufferSize, sizeof(q31_t));
     
-    //Allocate table for weighting
-    _windowTable = calloc(_bufferSize, sizeof(double));
+  //Allocate results buffer
+  _sampleBufferFilt = calloc(_bufferSize, sizeof(q31_t));
+  
+  //Allocate table for weighting
+  _windowTable = calloc(_bufferSize, sizeof(double));
 
-    createWindow(_windowTable, _bufferSize, HANN);
-    
-    //Free all buffers in case of bad allocation
-    if (_sampleBuffer == NULL || _sampleBufferFilt == NULL){
+  createWindow(_windowTable, _bufferSize, _window_type);
+  
+  //Free all buffers in case of bad allocation
+  if (_sampleBuffer == NULL || _sampleBufferFilt == NULL){
 
-      if (_sampleBuffer) {
-        free(_sampleBuffer);
-        _sampleBuffer = NULL;
-      }
-
-      if (_sampleBufferFilt) {
-        free(_sampleBufferFilt);
-        _sampleBuffer = NULL;
-      }
-
-      return false;
+    if (_sampleBuffer) {
+      free(_sampleBuffer);
+      _sampleBuffer = NULL;
     }
-    return true;
+
+    if (_sampleBufferFilt) {
+      free(_sampleBufferFilt);
+      _sampleBuffer = NULL;
+    }
+
+    return false;
+  }
+  return true;
 }
 
 double FIRAnalysis::sensorRead(){

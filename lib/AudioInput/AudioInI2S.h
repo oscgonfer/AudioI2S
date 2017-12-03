@@ -15,7 +15,6 @@ public:
 
   long sampleRate();
   int bitsPerSample();
-  int channels();
   int datasize();
   bool bufferI2SAvailable();
   int readBuffer(void* buffer, int bufferReadSize);

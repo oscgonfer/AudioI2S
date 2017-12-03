@@ -26,7 +26,7 @@ typedef struct
 class FIRAnalysis : public AudioAnalyser
 {
 public:
-  FIRAnalysis(int bufferSize); //
+  FIRAnalysis(int bufferSize, WindowType windowType); //
   ~FIRAnalysis(); //
 
   double sensorRead();
@@ -45,7 +45,6 @@ private:
   int _bufferSize; //Already usable bufferSize
   //PARAMETERS
   int _bitsPerSample;
-  int _channels;
   int _sampleRate;
   //RMS Results
   double _rms;
@@ -54,9 +53,10 @@ private:
   void* _sampleBuffer;
   //FILTER
   void* _sampleBufferFilt;
+  unsigned int _chunkLength;  
+  //WINDOW
   void* _windowTable;
-  unsigned int _chunkLength;    
-
+  WindowType _window_type;
 };
 
 #endif

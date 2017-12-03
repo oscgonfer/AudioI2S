@@ -6,8 +6,8 @@
 
 #define FIR_COEFFS_LEN  201
 
-const uint16_t FILTERSIZE = FIR_COEFFS_LEN;
-const uint32_t FILTERBLOCKSIZE = 15;
+const uint8_t FILTERSIZE = FIR_COEFFS_LEN;
+const uint8_t FILTERBLOCKSIZE = 15;
 extern float32_t firCoeffs[FIR_COEFFS_LEN];
 
 float32_t firCoeffs[FIR_COEFFS_LEN] = {
@@ -211,5 +211,6 @@ float32_t firCoeffs[FIR_COEFFS_LEN] = {
 -7.9227e-06,
 -9.1004e-06,
 -1.6466e-05,
+-2.9465e-05,
 };
 #endif

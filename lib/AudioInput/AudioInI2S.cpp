@@ -56,11 +56,6 @@ int AudioInI2S::bitsPerSample()
   return _bitsPerSample;
 }
 
-int AudioInI2S::channels()
-{
-  return 2;
-}
-
 bool AudioInI2S::bufferI2SAvailable(){
 
   return _bufferI2SAvailable;
