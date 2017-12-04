@@ -6,15 +6,11 @@ This folder contains octave scripts in order to auto-generate .h files with cust
 
 Depending on the microphone frequency response, it would be necessary to equalise the spectrum:
 
-![]()
-
 1. Generate a .csv file with two columns: the frequency vector and the corresponding desired correction. Vector lenght is not fixed. Take into account the correction will be applied by division:
 
-'''shell=
-
-    *spectrumBuffer /= equalisationTable;
-
-'''
+```
+    spectrumBuffer /= equalisationTable;
+```
 
 2. Save it in this same directory
 3. Execute EQUALISATION.m in order to generate corresponding .h file for the analyser
@@ -25,11 +21,9 @@ Generate the desired filter coefficients for the FIR filter
 
 1. Generate a .csv file with two columns: the frequency vector and the corresponding desired equalisation. Vector lenght is not fixed. Take into account the correction will be applied by division:
 
-'''shell=
-
-    *spectrumBuffer /= equalisationTable;
-
-'''
+```
+    spectrumBuffer /= equalisationTable;
+```
 
 2. Save it in this same directory
 3. Open FILTER_CREATE.m and choose which weighting function you would like to implement (A, C or Z (no weighting))
