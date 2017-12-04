@@ -47,6 +47,7 @@ void AudioAnalyser::convert2DB(void *vectorSource, void *vectorDest, int vectorS
     for (int i = 0; i<vectorSize;i++){
       if (*_vect>0){ 
         *_vectDB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2) * (*_vect)));
+        if (*_vectDB < 0 ) *_vectDB = 0;      
       } else {
         *_vectDB = 0;
       }

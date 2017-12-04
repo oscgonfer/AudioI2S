@@ -1,6 +1,6 @@
 #include "FIRAnalyser.h"
 
-FIRAnalysis::FIRAnalysis(uint32_t bufferSize) :
+FIRAnalyser::FIRAnalyser(uint32_t bufferSize) :
   //BUFFER Sizes
   _bufferSize(bufferSize), //Already usable buffersize
   //BUFFERs
@@ -15,7 +15,7 @@ FIRAnalysis::FIRAnalysis(uint32_t bufferSize) :
 {
 }
 
-FIRAnalysis::~FIRAnalysis(){
+FIRAnalyser::~FIRAnalyser(){
   if (_sampleBuffer) {
     free(_sampleBuffer);
   }
@@ -25,7 +25,7 @@ FIRAnalysis::~FIRAnalysis(){
   }
 }
 
-bool FIRAnalysis::configure(AudioInI2S& input){
+bool FIRAnalyser::configure(AudioInI2S& input){
 
     _bitsPerSample = input.bitsPerSample();
     _channels = input.channels();
@@ -55,7 +55,7 @@ bool FIRAnalysis::configure(AudioInI2S& input){
     return 1;
 }
 
-double FIRAnalysis::sensorRead(){
+double FIRAnalyser::sensorRead(){
 
 
 //int32_t _buffer[_bufferSize]; //Or using directly the _sampleBuffer?
@@ -93,17 +93,17 @@ double FIRAnalysis::sensorRead(){
   }
 
 
-  free(_sampleBuffer);
-  free(_sampleBufferFilt);
+  // free(_sampleBuffer);
+  // free(_sampleBufferFilt);
 
   // Set available to true
-  available(true);
+  // available(true);
 
   return _rmsFilterDB;
 }
 
 
-int FIRAnalysis::filterInChunks(filterType32* pThis, void* pInput, void* pOutput, int length){
+int FIRAnalyser::filterInChunks(filterType32* pThis, void* pInput, void* pOutput, int length){
   int processedLength = 0;
   unsigned int chunkLength, outLength;
 
@@ -132,29 +132,29 @@ int FIRAnalysis::filterInChunks(filterType32* pThis, void* pInput, void* pOutput
   return processedLength;                         
 }
 
-int FIRAnalysis::filterConv(filterType32 * pThis, q31_t* pInputChunk, q31_t* pOutputChunk, unsigned int count) {
+int FIRAnalyser::filterConv(filterType32 * pThis, q31_t* pInputChunk, q31_t* pOutputChunk, unsigned int count) {
   arm_fir_q31( &pThis->_Q31, pInputChunk, pOutputChunk, count);
 
   return count;
 }
 
-filterType32 *FIRAnalysis::filterCreate(){
+filterType32 *FIRAnalyser::filterCreate(){
   filterType32 *result = (filterType32 *)malloc( sizeof(filterType32) ); // Allocate memory for the object
   filterInit(result); // Initialize it
   return result; // Return the result
 }
 
-void FIRAnalysis::filterInit(filterType32 * pThis){
+void FIRAnalyser::filterInit(filterType32 * pThis){
   arm_float_to_q31(firCoeffs, pThis->_CoeffsQ31, FILTERSIZE);
   arm_fir_init_q31(&pThis->_Q31, FILTERSIZE, pThis->_CoeffsQ31, pThis->_FstateQ31, FILTERBLOCKSIZE);
   filterReset(pThis);
 }
 
-void FIRAnalysis::filterDestroy(filterType32 *pObject){
+void FIRAnalyser::filterDestroy(filterType32 *pObject){
   free(pObject);
 }
 
-void FIRAnalysis::filterReset(filterType32 * pThis) {
+void FIRAnalyser::filterReset(filterType32 * pThis) {
   // Reset state to 0
   memset(&pThis->_FstateQ31, 0, sizeof(pThis->_FstateQ31) );
   // Reset output

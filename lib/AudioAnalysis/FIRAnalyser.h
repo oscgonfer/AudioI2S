@@ -23,11 +23,11 @@ typedef struct
 } filterType32;
 
 //CLASS
-class FIRAnalysis : public AudioAnalyser
+class FIRAnalyser : public AudioAnalyser
 {
 public:
-  FIRAnalysis(uint32_t bufferSize); //
-  ~FIRAnalysis(); //
+  FIRAnalyser(uint32_t bufferSize); //
+  ~FIRAnalyser(); //
 
   double sensorRead();
   bool configure(AudioInI2S& input);

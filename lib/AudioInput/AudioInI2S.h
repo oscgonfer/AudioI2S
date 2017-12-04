@@ -1,7 +1,7 @@
 #ifndef _AUDIO_IN_I2S_CLASS_H_INCLUDED
 #define _AUDIO_IN_I2S_CLASS_H_INCLUDED
 
-#include "../I2S_SCK/I2S_SCK.h"
+#include "I2S.h"
 
 class AudioInI2S
 {

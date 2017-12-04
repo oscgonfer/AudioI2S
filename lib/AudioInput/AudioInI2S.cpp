@@ -14,7 +14,7 @@ AudioInI2S::~AudioInI2S()
 
 bool AudioInI2S::begin(long sampleRate, int bitsPerSample)
 {
-  if (!I2S_SCK.begin(I2S_PHILIPS_MODE, sampleRate, bitsPerSample)) {
+  if (!I2S.begin(I2S_PHILIPS_MODE, sampleRate, bitsPerSample)) {
     return 0;
   }
 
@@ -28,7 +28,7 @@ bool AudioInI2S::begin(long sampleRate, int bitsPerSample)
   //Initialisation
   for (int i = 0; i< _delay; i++) {
       // Trigger a read to kick things off
-      I2S_SCK.read();
+      I2S.read();
   }
 
   return 1;
@@ -42,7 +42,7 @@ void AudioInI2S::end()
   _bufferI2SAvailable = false;
   _callbackTriggered = false;
 
-  I2S_SCK.end();
+  I2S.end();
 }
 
 long AudioInI2S::sampleRate()
@@ -74,13 +74,15 @@ bool AudioInI2S::readBuffer(void *buffer, int bufferSize) {
 
     //FILL BUFFER HERE
     while (counter < bufferSize) {
-      sample = I2S_SCK.read();
+      sample = I2S.read();
       if (sample) {
         *buff = sample;
         buff++;
         counter++;
       }
     }
+
+    // end();
 
     return true;
 

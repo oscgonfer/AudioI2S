@@ -61,14 +61,17 @@ fputs (fid, disp(num2str(length(FIR_COEFS_FLIPPED))));
 fputs (fid, disp(""));
 fputs (fid, disp("const uint16_t FILTERSIZE = FIR_COEFFS_LEN;"));
 fputs (fid, disp("const uint32_t FILTERBLOCKSIZE = 15;"));
-fputs (fid, disp("extern float32_t firCoeffs[FIR_COEFFS_LEN];"));
+
 fputs (fid, disp(""));
-fputs (fid, disp("float32_t firCoeffs[FIR_COEFFS_LEN] = {"));
+fputs (fid, ("#define FILTERTABLE {"));
 for i = 1:1:FIR_COEFS_LENGTH
   fputs (fid, num2str(FIR_COEFS_FLIPPED(i)));
-  fputs( fid, disp(","));
+  if (i<FIR_COEFS_LENGTH)
+    fputs( fid, (","));
+  endif
 end 
 fputs(fid, disp("};"));
+fputs (fid, disp("float32_t firCoeffs[] = FILTERTABLE;"));
 fputs (fid, disp("#endif"));
 fclose (fid);
 

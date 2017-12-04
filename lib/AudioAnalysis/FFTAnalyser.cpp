@@ -81,11 +81,11 @@ bool FFTAnalyser::configure(AudioInI2S& input){
         _spectrumBufferDB = NULL;
       }
 
-      available(false);
+      // available(false);
       return false;
     }
 
-    available(true);
+    // available(true);
     return true;
 }
 
@@ -99,20 +99,22 @@ double FFTAnalyser::sensorRead(int spectrum[]){
   } else {
     available(false);
     if (audioInI2SObject.readBuffer(_sampleBuffer,_bufferSize)){
-
+      uint32_t time_after = micros();
       // PRE-TREAT BUFFER - NECESSARY?
-      q31_t* dst = (q31_t*) _sampleBuffer;
+      // q31_t* dst = (q31_t*) _sampleBuffer;
 
+      /*
       for (int i = 0; i < _bufferSize; i++) {
         // Serial.println(*dst);
         *dst/=128; //CORRECT THE BIT NUMBER
         dst++;
       }
+      */
 
       // ------------------------------
 
       // Downscale the sample buffer for proper functioning
-      scaling(_sampleBuffer, _bufferSize, CONST_FACTOR, false);
+      scaling(_sampleBuffer, _bufferSize, CONST_FACTOR*128, false);
 
       // Apply Hann Window
       window(_sampleBuffer,_bufferSize);
@@ -139,12 +141,14 @@ double FFTAnalyser::sensorRead(int spectrum[]){
       }
     
       // Free buffers
-      free(_spectrumBuffer);
-      free(_spectrumBufferDB);
+      // free(_spectrumBuffer);
+      // free(_spectrumBufferDB);
       // Set available to true
-      available(true);
+      // available(true);
   
       _rmsSpecBDB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2)*_rmsSpecB));
+      SerialUSB.println(micros()-time_after);
+
       return _rmsSpecBDB;
     } else {
       return 0;
@@ -161,19 +165,20 @@ double FFTAnalyser::sensorRead(){
   } else {
     available(false);
     if (audioInI2SObject.readBuffer(_sampleBuffer,_bufferSize)){
-
+      uint32_t time_after = micros();
+      
       // PRE-TREAT BUFFER - NECESSARY?
-      q31_t* dst = (q31_t*) _sampleBuffer;
+      /*q31_t* dst = (q31_t*) _sampleBuffer;
 
       for (int i = 0; i < _bufferSize; i++) {
         // Serial.println(*dst);
         *dst/=128; //CORRECT THE BIT NUMBER
         dst++;
-      }
-    //------------------------------
+      }*/
+      //------------------------------
 
       // Downscale the sample buffer for proper functioning
-      scaling(_sampleBuffer, _bufferSize, CONST_FACTOR, false);
+      scaling(_sampleBuffer, _bufferSize, CONST_FACTOR*128, false);
 
       // Apply Hann Window
       window(_sampleBuffer,_bufferSize);
@@ -196,14 +201,16 @@ double FFTAnalyser::sensorRead(){
       }
     
       // Free buffers
-      free(_spectrumBuffer);
+      // free(_spectrumBuffer);
 
       // Set available to true
-      available(true);
+      // available(true);
     
       _rmsSpecBDB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2)*_rmsSpecB));
+      SerialUSB.println(micros()-time_after);
     }
   } 
+
   return _rmsSpecBDB;
 }
 
