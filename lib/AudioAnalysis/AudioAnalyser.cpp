@@ -39,10 +39,9 @@ double AudioAnalyser::rms(void *inputBuffer, int inputSize, int typeRMS, int FAC
   return _rmsOut;
 } 
 
-void AudioAnalyser::convert2DB(void *vectorSource, void *vectorDest, int vectorSize){
-
-    q31_t* _vectDB = (q31_t*) vectorDest;
-    const q31_t* _vect = (const q31_t*) vectorSource;
+void AudioAnalyser::convert2DB(void *inputVector, void *outputVector, int vectorSize){
+    const q31_t* _vect = (const q31_t*) inputVector;
+    q31_t* _vectDB = (q31_t*) outputVector;
 
     for (int i = 0; i<vectorSize;i++){
       if (*_vect>0){ 
@@ -51,18 +50,9 @@ void AudioAnalyser::convert2DB(void *vectorSource, void *vectorDest, int vectorS
       } else {
         *_vectDB = 0;
       }
-      _vectDB++;
       _vect++;
+      _vectDB++;
     }
-}
-
-bool AudioAnalyser::analyserAvailable() {
-  
-  return _AnalyserAvailable;
-}
-
-void AudioAnalyser::available(bool available) {
-  _AnalyserAvailable = available;
 }
 
 void AudioAnalyser::window(void *vector, int vectorSize){

@@ -11,7 +11,6 @@
 #include "AudioAnalyser.h"
 #include "ConstantsSound.h"
 
-
 //CLASS
 class FFTAnalyser : public AudioAnalyser
 {
@@ -20,7 +19,6 @@ public:
   FFTAnalyser(int bufferSize, int fftSize, WeightingType weighting_type); //
   ~FFTAnalyser(); //
 
-  //int Configure(int bufferSize, bool SpectrumDBOutput);
   double sensorRead(int spectrum[]);
   double sensorRead();
   bool configure(AudioInI2S& input);
@@ -33,14 +31,9 @@ private:
   //BUFFER Sizes
   int _fftSize;
   int _bufferSize; //Already usable bufferSize
-  //PARAMETERS
-  int _bitsPerSample;
-  int _channels;
-  int _sampleRate;
   WeightingType _weighting_type;
   //RMS Results
   double _rmsSpecB;
-  double _rmsSpecBDB;
   //BUFFERS
   void* _sampleBuffer;
   void* _fftBuffer;

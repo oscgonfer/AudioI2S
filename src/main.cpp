@@ -9,9 +9,10 @@ Circuit:
    * SD connected to pin 9
 */
 
+
+
 #include "AudioAnalyser.h"
 #include "FFTAnalyser.h"
-// #include "FIRAnalyser.h"
 #include "AudioInI2S.h"
 
 ///// FFT Parameters
@@ -28,10 +29,9 @@ int timer = 0;
 
 ///// DEFINE ANALYSER
 FFTAnalyser fftAnalyser(bufferSize, fftSize, A_WEIGHTING);
-// FIRAnalyser firAnalyser(bufferSize);
 
 void setup() {
-	// Open serial communications
+	// Open SerialUSB communications
 	SerialUSB.begin(115200);
 
     // BLINK LED
@@ -45,10 +45,6 @@ void setup() {
     if(!fftAnalyser.configure(audioInI2SObject)){
         SerialUSB.println("Failed to init Analyser");
     }
-
-    // if(!firAnalyser.configure(audioInI2SObject)){
-    //     SerialUSB.println("Failed to init Analyser");
-    // }
 
     SerialUSB.println("*******");
     SerialUSB.println("Init Audio OK");
@@ -71,26 +67,22 @@ uint32_t FreeRamMem() {
 }
 
 void loop() {
-	//if (fftAnalyser.analyserAvailable()){
-
-    while (timer < 30000000){
-        timer++;
-    }
-    timer = 0;
+    // while (timer < 30000){
+    //     timer++;
+    // }
+    // timer = 0;
 
     //READ RMS AND SPECTRUM
 	DB = fftAnalyser.sensorRead(spectrum);
     //READ ONLY RMS
     // DB = fftAnalyser.sensorRead();
 
-    // DB = firAnalyser.sensorRead();
-
     digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
     delay(15);                       // wait for a second
     digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
     delay(15);                       // wait for a second
     
-    /*
+    
     SerialUSB.println("Buffer Results (arduino)");    
     for (int i = 0; i < fftSize/2; i++) {
         SerialUSB.print((i * sampleRate) / fftSize);
@@ -99,12 +91,10 @@ void loop() {
         SerialUSB.println("");
     }
 
-    SerialUSB.println("--");*/
+    SerialUSB.println("--");
 
     SerialUSB.println(DB);
     SerialUSB.println(FreeRamMem());
     SerialUSB.println("--");
 
 }
-
-
