@@ -2,27 +2,31 @@
 
 This is a library for the [Smart Citizen Kit V2.0](https://github.com/fablabbcn/smartcitizen-kit-20) for performing audio analysis.
 
-It's intented to perform **audio analysis** on a SAMD21 processor of a **MEMS I2S microphone** output, with the idea of easily expanding it's functionality towards different inputs.
-
-Additionally, the analysis can be performed through a configurable AudioAnalyser, containing a FFT analyser or a FIR (Finite Impulse Response) Filter.
+It's intented to perform **audio analysis** on a SAMD21 processor of a **MEMS I2S microphone** output. The signal analysis is performed through a FFTAnalyser.
 
 ## Features:
 
-### FFT Analysis
+### FFT Analysis and Weighting
 
-1. Signal windowing through _configurable_ hann method
+1. Signal windowing through hann method
 2. FFT analysis with arm's cortex funtion on q31_t data type
-3. Spectrum calculation and _configurable_ weigthing through look-up table
+3. Spectrum calculation and _configurable_ weigthing through look-up table (A, C or Z)
 4. Custom Spectrum Equalisation
-6. RMS calculation
-7. dB scale convertion
+6. RMS calculation and dB scale Convertion
 
-### FIR Filtering
+### A-C Weighting functions
 
-1. Signal downscaling
-2. Signal filtering (by chunks) with arm_fir custom filter including equalisation and a-weighting
-3. RMS calculation
+There is an octave script in /OCTAVE/WEIGHTING that generates a custom weighting table as specifies in the actual legislation. It outputs a 
 
+### Communication through sound
+
+WIP
+
+**NB**
+
+For further functionalities, such as configurable Audio Analysis through FFT, FIR filter and so on, visit [here](https://github.com/oscgonfer/AudioI2S).
+
+----
 
 With kind references to:
 

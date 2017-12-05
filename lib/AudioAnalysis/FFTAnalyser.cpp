@@ -78,7 +78,7 @@ double FFTAnalyser::sensorRead(int spectrum[]){
     // Apply Hann Window
     window(_sampleBuffer,_bufferSize);
   
-    // FFT - EQUALIZATION and A-WEIGHTING
+    // FFT - EQUALIZATION and WEIGHTING
     fft(_sampleBuffer, _spectrumBuffer, _fftSize);
     equalising(_spectrumBuffer, _fftSize/2);
 
@@ -119,7 +119,7 @@ double FFTAnalyser::sensorRead(){
     // Apply Hann Window
     window(_sampleBuffer,_bufferSize);
   
-    // FFT - EQUALIZATION and A-WEIGHTING
+    // FFT - EQUALIZATION and WEIGHTING
     fft(_sampleBuffer, _spectrumBuffer, _fftSize);
     equalising(_spectrumBuffer, _fftSize/2);
 
@@ -139,12 +139,11 @@ double FFTAnalyser::sensorRead(){
     _rmsSpecB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2)*_rmsSpecB));
     SerialUSB.println(micros()-time_after);
   }
-
   return _rmsSpecB;
 }
 
 void FFTAnalyser::fft(void *_inputBuffer, void* _outputBuffer, int _fftBufferSize){
-  //_sampleBufferWin is already treated for FFT (usable samples, averaged, windowed)
+  //_inputBuffer is already treated for FFT (usable samples, averaged, windowed)
 
   // Calculate FFTBuffer ((r-i,r-i...))
   arm_rfft_q31(&_S31, (q31_t*)_inputBuffer, (q31_t*)_fftBuffer);
@@ -171,10 +170,11 @@ void FFTAnalyser::fft(void *_inputBuffer, void* _outputBuffer, int _fftBufferSiz
 }
 
 void FFTAnalyser::equalising(void *inputBuffer, int inputSize){
+  //Deconvolution of the spectrumBuffer by division of the microphone frequency response
+
   q31_t* spBE = (q31_t*)inputBuffer;
 
   for (int i = 0; i < inputSize; i +=8) {
-    //Deconvolution of the spectrumBuffer by division of the microphone frequency response
     double equalfactor = EQUALTAB[i];
     *spBE /= equalfactor;
     spBE++;

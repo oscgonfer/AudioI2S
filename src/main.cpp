@@ -1,3 +1,5 @@
+// This sketch is to be used with the native port of the Arduino Zero
+
 /*
 Circuit:
  * Arduino/Genuino Zero
@@ -8,7 +10,6 @@ Circuit:
    * CLK connected to pin 1
    * SD connected to pin 9
 */
-
 
 
 #include "AudioAnalyser.h"
@@ -24,8 +25,8 @@ const int sampleRate = 44100;
 
 ///// OUTPUT
 int spectrum[fftSize/2];
-double DB = 0;
-int timer = 0;
+double resultdB = 0;
+// int timer = 0; // Use this timer if you want to test some "time-spacing" between sensor readings
 
 ///// DEFINE ANALYSER
 FFTAnalyser fftAnalyser(bufferSize, fftSize, A_WEIGHTING);
@@ -67,22 +68,25 @@ uint32_t FreeRamMem() {
 }
 
 void loop() {
+
+    //// Use this timer if you want to test some "time-spacing" between sensor readings
     // while (timer < 30000){
     //     timer++;
     // }
     // timer = 0;
 
-    //READ RMS AND SPECTRUM
-	DB = fftAnalyser.sensorRead(spectrum);
-    //READ ONLY RMS
-    // DB = fftAnalyser.sensorRead();
+    //// READ RMS AND SPECTRUM
+	resultdB = fftAnalyser.sensorRead(spectrum);
+    //// READ ONLY RMS
+    // resultdB = fftAnalyser.sensorRead();
 
-    digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
-    delay(15);                       // wait for a second
-    digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
-    delay(15);                       // wait for a second
+    //// Make the LED blink
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(15);                  
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(15);                       
     
-    
+    //// Print out the spectrum
     SerialUSB.println("Buffer Results (arduino)");    
     for (int i = 0; i < fftSize/2; i++) {
         SerialUSB.print((i * sampleRate) / fftSize);
@@ -93,7 +97,8 @@ void loop() {
 
     SerialUSB.println("--");
 
-    SerialUSB.println(DB);
+    // Print out the RMS dB results
+    SerialUSB.println(resultdB);
     SerialUSB.println(FreeRamMem());
     SerialUSB.println("--");
 
