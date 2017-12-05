@@ -63,50 +63,40 @@ bool FIRAnalysis::configure(AudioInI2S& input){
 
 double FIRAnalysis::sensorRead(){
 
-  if (!audioInI2SObject.bufferI2SAvailable()){
+  if (audioInI2SObject.readBuffer(_sampleBuffer,_bufferSize)){
 
-    return 0;
+    filterType32 *_filter = filterCreate(); // Create an instance of the filter
+
+    // Downscale the sample buffer for proper functioning
+    scaling(_sampleBuffer, _bufferSize, CONST_FACTOR, false);
+
+    // Apply Window
+    bool windowApplied = window(_sampleBuffer, _windowTable, _bufferSize);
+    RMSType RMSToApply;
+
+    if (windowApplied) {
+      RMSToApply = TIME_W_WIN;
+    } else {
+      RMSToApply = TIME_WO_WIN;
+    }
+
+    // Filter by convolution - applies a-weighting + equalization + window
+    filterReset(_filter);
+    filterInChunks(_filter, _sampleBuffer, _sampleBufferFilt, _bufferSize);
+
+    // RMS CALCULATION 
+    _rms = rms(_sampleBufferFilt, _bufferSize, RMSToApply, CONST_FACTOR); 
+    _rmsDB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2)*_rms)); 
+    filterDestroy(_filter);
+
+    return _rmsDB;
 
   } else {
 
-    if (audioInI2SObject.readBuffer(_sampleBuffer,_bufferSize)){
+    return 0;
 
-      filterType32 *_filter = filterCreate(); // Create an instance of the filter
-
-      // Downscale the sample buffer for proper functioning
-      scaling(_sampleBuffer, _bufferSize, CONST_FACTOR, false);
-
-      // Apply Window
-      bool windowApplied = window(_sampleBuffer, _windowTable, _bufferSize);
-      RMSType RMSToApply;
-
-      if (windowApplied) {
-        RMSToApply = TIME_W_WIN;
-      } else {
-        RMSToApply = TIME_WO_WIN;
-      }
-
-      // Filter by convolution - applies a-weighting + equalization + window
-      filterReset(_filter);
-      filterInChunks(_filter, _sampleBuffer, _sampleBufferFilt, _bufferSize);
-
-      // RMS CALCULATION 
-      _rms = rms(_sampleBufferFilt, _bufferSize, RMSToApply, CONST_FACTOR); 
-      _rmsDB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2)*_rms)); 
-      filterDestroy(_filter);
-
-      // Free buffers
-      // free(_sampleBuffer);
-      // free(_sampleBufferFilt);
-
-      return _rmsDB;
-
-    } else {
-
-      return 0;
-
-    }
   }
+  
 }
 
 

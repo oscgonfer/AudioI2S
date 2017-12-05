@@ -18,7 +18,7 @@ const int fftSize = 512; //IF THIS CHANGES EQUALISATION TABLE CHANGE
 //// AUDIO I2S Parameters
 const int bitsPerSample = 32; //CONSTANT FOR ICS43432 (24bit)
 const int bufferSize = 512;
-const int sampleRate = 8000; //Hz
+const int sampleRate = 44100; //Hz
 
 ///// OUTPUT
 int spectrum[fftSize/2];
@@ -30,20 +30,20 @@ FFTAnalyser fftAnalyser(bufferSize, fftSize, A_WEIGHTING, HANN);
 
 void setup() {
 	// Open serial communications
-	Serial.begin(115200);
+	SerialUSB.begin(115200);
 
  	// Configure Audio Input
     if(!audioInI2SObject.begin(sampleRate, bitsPerSample)){
-        Serial.println("Failed to init I2S");
+        SerialUSB.println("Failed to init I2S");
     }
 
     // Configure Analyser
     if(!fftAnalyser.configure(audioInI2SObject)){
-        Serial.println("Failed to init Analyser");
+        SerialUSB.println("Failed to init Analyser");
     }
 
-    Serial.println("-------------");
-    Serial.println("Init Audio OK");
+    SerialUSB.println("-------------");
+    SerialUSB.println("Init Audio OK");
 
 }
 
@@ -66,9 +66,9 @@ uint32_t FreeRamMem() {
 void loop() {
 
     //READ RMS AND SPECTRUM
-	resultDB = fftAnalyser.sensorRead(spectrum);
+	// resultDB = fftAnalyser.sensorRead(spectrum);
     //READ ONLY RMS
-    //RMS = fftAnalyser.sensorRead();
+    resultDB = fftAnalyser.sensorRead();
 
     /*
     //PRINT BUFFER RESULTS
@@ -82,8 +82,9 @@ void loop() {
     Serial.println("*******");
     */
 
-    Serial.println(resultDB);
-    Serial.println("FreeRamMem\t" + String(FreeRamMem()));
+    SerialUSB.println(resultDB);
+    SerialUSB.println("FreeRamMem\t" + String(FreeRamMem()));
+    SerialUSB.println("--");
 }
 
 

@@ -2,9 +2,7 @@
 
 AudioInI2S::AudioInI2S() :
   _sampleRate(-1),
-  _bitsPerSample(-1),
-  _callbackTriggered(false),
-  _bufferI2SAvailable(false)
+  _bitsPerSample(-1)
 {
 }
 
@@ -20,9 +18,6 @@ bool AudioInI2S::begin(long sampleRate, int bitsPerSample)
 
   _sampleRate = sampleRate;
   _bitsPerSample = bitsPerSample;
-
-  // add the receiver callback
-  //I2S.onReceive(AudioInI2S::onI2SReceive);
 
   //Initialisation 
   int _delay = 263000;
@@ -40,8 +35,6 @@ void AudioInI2S::end()
   _sampleRate = -1;
   _bitsPerSample = -1;
   _datasize = -1;
-  _bufferI2SAvailable = false;
-  _callbackTriggered = false;
 
   I2S.end();
 }
@@ -56,11 +49,6 @@ int AudioInI2S::bitsPerSample()
   return _bitsPerSample;
 }
 
-bool AudioInI2S::bufferI2SAvailable(){
-
-  return _bufferI2SAvailable;
-}
-
 int AudioInI2S::readBuffer(void *buffer, int bufferSize) {
   int32_t sample = 0;
   int32_t counter = 0;
@@ -70,25 +58,14 @@ int AudioInI2S::readBuffer(void *buffer, int bufferSize) {
   while (counter < bufferSize) {
     sample = I2S.read();
     if (sample) {
-      *buff = sample/128; //BIT CORRRECTION
+      *buff = sample>>7; //BIT CORRRECTION (/128)
       buff++;
       counter++;
     }
   }
 
-  _bufferI2SAvailable = false;
-
   return counter;
 }
 
-void AudioInI2S::onReceive()
-{
-  _bufferI2SAvailable = true;
-}
-
-void AudioInI2S::onI2SReceive()
-{
-  audioInI2SObject.onReceive();
-}
 
 AudioInI2S audioInI2SObject;

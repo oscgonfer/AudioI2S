@@ -86,113 +86,96 @@ bool FFTAnalyser::configure(AudioInI2S& input){
 
 double FFTAnalyser::sensorRead(int spectrum[]){
 
-  if (!audioInI2SObject.bufferI2SAvailable()){
+  if (audioInI2SObject.readBuffer(_sampleBuffer,_bufferSize)){
 
-    return 0;
+    // Downscale the sample buffer for proper functioning
+    scaling(_sampleBuffer, _bufferSize, CONST_FACTOR, false);
+
+    // Apply Window
+    window(_sampleBuffer, _windowTable, _bufferSize);
+
+    // FFT
+    fft(_sampleBuffer, _spectrumBuffer, _fftSize);
+
+    // Equalisation (for now only 256 bins)
+    equalising(_spectrumBuffer, _equaliserTable, _fftSize/2);
+
+    // Weighting (A, C, or Z)
+    switch (_weighting_type) {
+
+      case A_WEIGHTING:
+      case C_WEIGHTING:
+        weighting(_spectrumBuffer, _fftSize/2);
+        break;
+      case Z_WEIGHTING:
+        break;
+    }
+
+    // Calculate RMS
+    _rms = rms(_spectrumBuffer, _fftSize/2, FREQ, CONST_FACTOR); 
+    _rmsDB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2)*_rms));
+
+    // Upscale the spectrumBuffer
+    scaling(_spectrumBuffer, _fftSize/2, CONST_FACTOR, true);
+
+    // Convert it to DB
+    convert2DB(_spectrumBuffer, _fftSize/2);
+
+    // Copy it
+    memcpy(spectrum, _spectrumBuffer, sizeof(int) * _fftSize/2);
+
+    return _rmsDB;
 
   } else {
 
-    if (audioInI2SObject.readBuffer(_sampleBuffer,_bufferSize)){
+    return 0;
 
-      // Downscale the sample buffer for proper functioning
-      scaling(_sampleBuffer, _bufferSize, CONST_FACTOR, false);
-
-      // Apply Window
-      window(_sampleBuffer, _windowTable, _bufferSize);
-
-      // FFT
-      fft(_sampleBuffer, _spectrumBuffer, _fftSize);
-
-      // Equalisation (for now only 256 bins)
-      equalising(_spectrumBuffer, _equaliserTable, _fftSize/2);
-
-      // Weighting (A, C, or Z)
-      switch (_weighting_type) {
-
-        case A_WEIGHTING:
-        case C_WEIGHTING:
-          weighting(_spectrumBuffer, _fftSize/2);
-          break;
-        case Z_WEIGHTING:
-          break;
-      }
-
-      // Calculate RMS
-      _rms = rms(_spectrumBuffer, _fftSize/2, FREQ, CONST_FACTOR); 
-      _rmsDB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2)*_rms));
-
-      // Upscale the spectrumBuffer
-      scaling(_spectrumBuffer, _fftSize/2, CONST_FACTOR, true);
-
-      // Convert it to DB
-      convert2DB(_spectrumBuffer, _fftSize/2);
-
-      // Copy it
-      memcpy(spectrum, _spectrumBuffer, sizeof(int) * _fftSize/2);
-      
-      // Free buffer
-      // free(_spectrumBuffer);
-
-      return _rmsDB;
-
-    } else {
-
-      return 0;
-
-    }
   }
 }
 
 double FFTAnalyser::sensorRead(){
 
-  if (!audioInI2SObject.bufferI2SAvailable()){
+  if (audioInI2SObject.readBuffer(_sampleBuffer,_bufferSize)){
 
-    return 0;
+    // Downscale the sample buffer in order to be able to calculate SQUARES
+    scaling(_sampleBuffer, _bufferSize, CONST_FACTOR, false);
+
+    // Apply Window
+    window(_sampleBuffer, _windowTable, _bufferSize);
+  
+    // FFT
+    fft(_sampleBuffer, _spectrumBuffer, _fftSize);
+
+    // Equalisation
+    equalising(_spectrumBuffer, _equaliserTable, _fftSize/2);
+
+    // Weighting (A, C or Z)
+    switch (_weighting_type) {
+
+      case A_WEIGHTING:
+      case C_WEIGHTING:
+        weighting(_spectrumBuffer, _fftSize/2);
+        break;
+
+      case Z_WEIGHTING:
+        break;
+
+    }
+
+    // Calculate RMS
+    _rms = rms(_spectrumBuffer, _fftSize/2, FREQ, CONST_FACTOR); 
+    _rmsDB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2)*_rms));
+
+    // Free buffers
+    // free(_spectrumBuffer);
+  
+    return _rmsDB;
 
   } else {
 
-    if (audioInI2SObject.readBuffer(_sampleBuffer,_bufferSize)){
+    return 0;
 
-      // Downscale the sample buffer in order to be able to calculate SQUARES
-      scaling(_sampleBuffer, _bufferSize, CONST_FACTOR, false);
-
-      // Apply Window
-      window(_sampleBuffer, _windowTable, _bufferSize);
-    
-      // FFT
-      fft(_sampleBuffer, _spectrumBuffer, _fftSize);
-
-      // Equalisation
-      equalising(_spectrumBuffer, _equaliserTable, _fftSize/2);
-
-      // Weighting (A, C or Z)
-      switch (_weighting_type) {
-
-        case A_WEIGHTING:
-        case C_WEIGHTING:
-          weighting(_spectrumBuffer, _fftSize/2);
-          break;
-
-        case Z_WEIGHTING:
-          break;
-
-      }
-
-      // Calculate RMS
-      _rms = rms(_spectrumBuffer, _fftSize/2, FREQ, CONST_FACTOR); 
-      _rmsDB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2)*_rms));
-
-      // Free buffers
-      // free(_spectrumBuffer);
-    
-      return _rmsDB;
-
-    } else {
-
-      return 0;
-
-    }
-  } 
+  }
 }
 
 void FFTAnalyser::fft(void *_inputBuffer, void* _outputBuffer, int _fftBufferSize){

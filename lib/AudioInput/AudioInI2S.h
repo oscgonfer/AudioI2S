@@ -16,7 +16,6 @@ public:
   long sampleRate();
   int bitsPerSample();
   int datasize();
-  bool bufferI2SAvailable();
   int readBuffer(void* buffer, int bufferReadSize);
 
 private:
@@ -29,9 +28,6 @@ private:
   //INIT I2S
   long _sampleRate;
   int _bitsPerSample;
-  //I2S CALLBACK
-  bool _callbackTriggered;
-  bool _bufferI2SAvailable;
   //I2S PARAM
   int _datasize;
 };
