@@ -15,7 +15,7 @@ void AudioAnalyser::scaling(void *vector, int vectorSize, double factor, bool mu
 }
 
 double AudioAnalyser::rms(void *inputBuffer, int inputSize, RMSType typeRMS, int FACTOR){ 
-  
+  //typeRMS = 1 if time domain -- typeRMS = 2 if spectrum domain
   double _rmsOut = 0;
   const q31_t* _pBuffer = (const q31_t*) inputBuffer; 
  
@@ -39,18 +39,20 @@ double AudioAnalyser::rms(void *inputBuffer, int inputSize, RMSType typeRMS, int
   return _rmsOut;
 } 
 
-void AudioAnalyser::convert2DB(void *vector, int vectorSize){
+void AudioAnalyser::convert2DB(void *inputVector, void *outputVector, int vectorSize){
+    const q31_t* _vect = (const q31_t*) inputVector;
+    q31_t* _vectDB = (q31_t*) outputVector;
 
-  q31_t* _vect = (q31_t*) vector;
-
-  for (int i = 0; i<vectorSize;i++){
-    if (*_vect>0){ 
-      *_vect = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2) * (*_vect)));
-    } else {
-      *_vect = 0;
+    for (int i = 0; i<vectorSize;i++){
+      if (*_vect>0){ 
+        *_vectDB = FULL_SCALE_DBSPL-(FULL_SCALE_DBFS-20*log10(sqrt(2) * (*_vect)));
+        if (*_vectDB < 0 ) *_vectDB = 0;      
+      } else {
+        *_vectDB = 0;
+      }
+      _vect++;
+      _vectDB++;
     }
-    _vect++;
-  }
 }
 
 bool AudioAnalyser::window(void *vector, void *windowTable, int vectorSize){

@@ -23,11 +23,11 @@ typedef struct
 } filterType32;
 
 //CLASS
-class FIRAnalysis : public AudioAnalyser
+class FIRAnalyser : public AudioAnalyser
 {
 public:
-  FIRAnalysis(int bufferSize, WindowType windowType); //
-  ~FIRAnalysis(); //
+  FIRAnalyser(int bufferSize, WindowType windowType); //
+  ~FIRAnalyser(); //
 
   double sensorRead();
   bool configure(AudioInI2S& input);
@@ -43,12 +43,8 @@ private:
 
   //BUFFER Sizes
   int _bufferSize; //Already usable bufferSize
-  //PARAMETERS
-  int _bitsPerSample;
-  int _sampleRate;
   //RMS Results
   double _rms;
-  double _rmsDB;
   //BUFFERS
   void* _sampleBuffer;
   //FILTER

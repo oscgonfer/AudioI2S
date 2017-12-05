@@ -34,10 +34,9 @@ private:
   int _fftSize;
   int _bufferSize; //Already usable bufferSize
   //PARAMETERS
-  int _bitsPerSample;
-  int _sampleRate;
   WeightingType _weighting_type;
   WindowType _window_type;
+  int _sampleRate;
   //RMS Results
   double _rms;
   double _rmsDB;
@@ -45,6 +44,7 @@ private:
   void* _sampleBuffer;
   void* _fftBuffer;
   void* _spectrumBuffer;
+  void* _spectrumBufferDB;
   void* _weightingTable;
   void* _windowTable;
   void* _equaliserTable;

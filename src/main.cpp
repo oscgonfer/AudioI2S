@@ -9,6 +9,7 @@ Circuit:
    * SD connected to pin 9
 */
 
+#include "AudioAnalyser.h"
 #include "FFTAnalyser.h"
 #include "AudioInI2S.h"
 
@@ -22,7 +23,8 @@ const int sampleRate = 44100; //Hz
 
 ///// OUTPUT
 int spectrum[fftSize/2];
-double resultDB = 1;
+double resultdB = 0;
+// int timer = 0; // Use this timer if you want to test some "time-spacing" between sensor readings
 
 ///// Analyser
 FFTAnalyser fftAnalyser(bufferSize, fftSize, A_WEIGHTING, HANN);
@@ -31,6 +33,9 @@ FFTAnalyser fftAnalyser(bufferSize, fftSize, A_WEIGHTING, HANN);
 void setup() {
 	// Open serial communications
 	SerialUSB.begin(115200);
+
+    // BLINK LED
+    pinMode(LED_BUILTIN, OUTPUT);
 
  	// Configure Audio Input
     if(!audioInI2SObject.begin(sampleRate, bitsPerSample)){
@@ -42,7 +47,7 @@ void setup() {
         SerialUSB.println("Failed to init Analyser");
     }
 
-    SerialUSB.println("-------------");
+    SerialUSB.println("*******");
     SerialUSB.println("Init Audio OK");
 
 }
@@ -65,10 +70,22 @@ uint32_t FreeRamMem() {
 
 void loop() {
 
+    //// Use this timer if you want to test some "time-spacing" between sensor readings
+    // while (timer < 30000){
+    //     timer++;
+    // }
+    // timer = 0;
+
     //READ RMS AND SPECTRUM
-	// resultDB = fftAnalyser.sensorRead(spectrum);
+	// resultdB = fftAnalyser.sensorRead(spectrum);
     //READ ONLY RMS
-    resultDB = fftAnalyser.sensorRead();
+    resultdB = fftAnalyser.sensorRead();
+
+    //// Make the LED blink
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(15);                  
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(15);    
 
     /*
     //PRINT BUFFER RESULTS
@@ -82,7 +99,7 @@ void loop() {
     Serial.println("*******");
     */
 
-    SerialUSB.println(resultDB);
+    SerialUSB.println(resultdB);
     SerialUSB.println("FreeRamMem\t" + String(FreeRamMem()));
     SerialUSB.println("--");
 }

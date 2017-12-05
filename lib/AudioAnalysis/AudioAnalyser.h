@@ -35,7 +35,7 @@ public:
 	double rms(void *inputBuffer, int inputSize, RMSType typeRMS, int factor);
 	void scaling(void *vector, int vectorSize, double factor, bool multDiv);
 	bool window(void *vector, void *windowTable, int vectorSize);
-	void convert2DB(void *vector, int vectorSize);
+	void convert2DB(void *inputVector, void *outputVector, int vectorSize);
 	void createWindow(void *vector, int vectorSize, WindowType windowType);
 
 public:

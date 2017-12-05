@@ -1,8 +1,7 @@
 #include "AudioInI2S.h"
 
-AudioInI2S::AudioInI2S() :
-  _sampleRate(-1),
-  _bitsPerSample(-1)
+AudioInI2S::AudioInI2S() : 
+_sampleRate(-1)
 {
 }
 
@@ -16,8 +15,7 @@ bool AudioInI2S::begin(long sampleRate, int bitsPerSample)
     return false;
   }
 
-  _sampleRate = sampleRate;
-  _bitsPerSample = bitsPerSample;
+  _sampleRate = sampleRate;  
 
   //Initialisation 
   int _delay = 263000;
@@ -32,24 +30,15 @@ bool AudioInI2S::begin(long sampleRate, int bitsPerSample)
 
 void AudioInI2S::end()
 {
-  _sampleRate = -1;
-  _bitsPerSample = -1;
-  _datasize = -1;
-
   I2S.end();
 }
 
-long AudioInI2S::sampleRate()
+int AudioInI2S::sampleRate()
 {
   return _sampleRate;
 }
 
-int AudioInI2S::bitsPerSample()
-{
-  return _bitsPerSample;
-}
-
-int AudioInI2S::readBuffer(void *buffer, int bufferSize) {
+bool AudioInI2S::readBuffer(void *buffer, int bufferSize) {
   int32_t sample = 0;
   int32_t counter = 0;
   int32_t *buff = (int32_t*) buffer;
@@ -58,14 +47,12 @@ int AudioInI2S::readBuffer(void *buffer, int bufferSize) {
   while (counter < bufferSize) {
     sample = I2S.read();
     if (sample) {
-      *buff = sample>>7; //BIT CORRRECTION (/128)
+      *buff = sample >> 7; //BIT CORRRECTION (/128)
       buff++;
       counter++;
     }
   }
-
   return counter;
 }
-
 
 AudioInI2S audioInI2SObject;
