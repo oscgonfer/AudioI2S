@@ -1,4 +1,4 @@
-# smartcitizen-kit-audio
+# AudioI2S
 
 This folder contains octave scripts in order to auto-generate .h files with custom coefficients for the Audio Analysis.
 
@@ -13,7 +13,7 @@ Depending on the microphone frequency response, it would be necessary to equalis
 ```
 
 2. Save it in this same directory
-3. Execute EQUALISATION.m in order to generate corresponding .h file for the analyser
+3. Execute EQUALISATION.m in order to generate corresponding .h file for the analyser.
 
 ## FIR Filter Coefficients Generation
 

@@ -22,7 +22,7 @@ const int sampleRate = 44100; //Hz
 
 ///// OUTPUT
 int spectrum[fftSize/2];
-double resultDB = 0;
+double resultDB = 1;
 
 ///// Analyser
 FFTAnalyser fftAnalyser(bufferSize, fftSize, A_WEIGHTING, HANN);

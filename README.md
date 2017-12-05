@@ -1,4 +1,4 @@
-# smartcitizen-kit-audio
+# AudioI2S
 
 This is a library for the [Smart Citizen Kit V2.0](https://github.com/fablabbcn/smartcitizen-kit-20) for performing audio analysis.
 
